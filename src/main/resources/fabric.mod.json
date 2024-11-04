@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "ordinarydiscordintegration",
+  "version": "${version}",
+  "name": "OrdinaryDiscordIntegration",
+  "description": "",
+  "authors": [],
+  "contact": {},
+  "license": "All-Rights-Reserved",
+  "icon": "assets/ordinarydiscordintegration/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "server": [
+      "tronka.ordinarydiscordintegration.OrdinaryDiscordIntegration"
+    ]
+  },
+  "mixins": [
+    "ordinarydiscordintegration.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}
