@@ -41,6 +41,7 @@ dependencies {
     implementation("net.dv8tion:JDA:5.1.2") {
         exclude module: "opus-java"
     }
+    implementation 'club.minnced:discord-webhooks:0.8.4'
     implementation 'com.moandjiezana.toml:toml4j:0.7.2'
 }
 

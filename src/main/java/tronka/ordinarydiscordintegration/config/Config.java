@@ -6,23 +6,27 @@ import net.fabricmc.loader.api.FabricLoader;
 import tronka.ordinarydiscordintegration.OrdinaryDiscordIntegration;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class Config {
     public static Config INSTANCE = loadConfig();
 
-    public String botToken;
-    public String serverChatChannel;
-    public String consoleChannel;
+    public String botToken = "";
+    public String serverChatChannel = "";
+    public String consoleChannel = "";
+    public boolean useWebHooks = true;
 
-    public boolean unlinkOnLeave;
+    public String avatarUrl = "https://api.tydiumcraft.net/v1/players/skin?uuid=%UUID%&type=avatar&randomuuid=%randomUUID%";
 
-    public JoinOptions joining;
+    public boolean unlinkOnLeave = true;
+
+    public JoinOptions joining = new JoinOptions();
 
     public static class JoinOptions {
-        public boolean enableLinking;
+        public boolean enableLinking = true;
         public long linkCodeExpireMinutes = 10;
-        public List<String> requiredJoinRoles;
+        public List<String> requiredJoinRoles = new ArrayList<>();
     }
 
     public ErrorStrings strings = new ErrorStrings();

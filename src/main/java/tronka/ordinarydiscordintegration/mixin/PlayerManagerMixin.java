@@ -7,7 +7,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-import tronka.ordinarydiscordintegration.Linkmanager;
+import tronka.ordinarydiscordintegration.LinkManager;
 
 import java.net.SocketAddress;
 
@@ -15,10 +15,8 @@ import java.net.SocketAddress;
 public class PlayerManagerMixin {
     @Inject(method = "checkCanJoin", at = @At("HEAD"), cancellable = true)
     private void canJoin(SocketAddress address, GameProfile profile, CallbackInfoReturnable<Text> cir) {
-        if (Linkmanager.canJoin(profile.getId())) { return; }
+        if (LinkManager.canJoin(profile.getId())) { return; }
 
-        var linkCode = Linkmanager.generateLinkCode(profile.getId());
-        var kickText = Text.of("Blabla bla not linked use \n /link " + linkCode);
-        cir.setReturnValue(kickText);
+        cir.setReturnValue(Text.of(LinkManager.getJoinError(profile.getId())));
     }
 }
