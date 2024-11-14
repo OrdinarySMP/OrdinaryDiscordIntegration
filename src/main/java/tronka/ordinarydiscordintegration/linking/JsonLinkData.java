@@ -1,0 +1,78 @@
+package tronka.ordinarydiscordintegration.linking;
+
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import tronka.ordinarydiscordintegration.OrdinaryDiscordIntegration;
+
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+public class JsonLinkData implements LinkData {
+    private List<PlayerLink> links;
+    private final File file;
+    private static final Gson gson = new Gson();
+
+    private JsonLinkData(File file) {
+        this.file = file;
+        if (!file.exists()) {
+            links = new ArrayList<>();
+            return;
+        }
+        try (FileReader reader = new FileReader(file)) {
+            links = gson.fromJson(reader, new TypeToken<ArrayList<PlayerLink>>() { });
+        } catch (Exception e) {
+            throw new RuntimeException("Cannot load player links (%s)".formatted(file.getAbsolutePath()), e);
+        }
+        if (links == null) {
+            // gson failed to parse a valid list
+            links = new ArrayList<>();
+        }
+        System.out.println("Loaded " + links.size() + " player links");
+        links.forEach(l -> System.out.println(l.getPlayerName()));
+    }
+
+    @Override
+    public Optional<PlayerLink> getPlayerLink(UUID playerId) {
+        return links.stream().filter(link -> playerId.equals(link.getPlayerId()) || link.hasAlt(playerId)).findFirst();
+    }
+
+    @Override
+    public Optional<PlayerLink> getPlayerLink(long discordId) {
+        return links.stream().filter(link -> discordId == link.getDiscordId()).findFirst();
+    }
+
+    @Override
+    public void addPlayerLink(PlayerLink playerLink) {
+        links.add(playerLink);
+        onUpdated();
+    }
+
+    @Override
+    public void removePlayerLink(PlayerLink playerLink) {
+        links.remove(playerLink);
+        onUpdated();
+    }
+
+    @Override
+    public void updatePlayerLink(PlayerLink playerLink) {
+        onUpdated();
+    }
+
+    private void onUpdated() {
+        try (FileWriter writer = new FileWriter(file)) {
+            gson.toJson(links, writer);
+        } catch (IOException e) {
+            OrdinaryDiscordIntegration.LOGGER.severe("Failed to save link data to file (%s)".formatted(file.getAbsolutePath()));
+        }
+    }
+
+    public static LinkData from(File file) {
+        return new JsonLinkData(file);
+    }
+}

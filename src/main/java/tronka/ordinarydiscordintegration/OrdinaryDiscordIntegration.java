@@ -24,9 +24,13 @@ import net.minecraft.network.message.MessageType;
 import net.minecraft.network.message.SignedMessage;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
+import net.minecraft.text.TextContent;
+import net.minecraft.util.Formatting;
 import org.jetbrains.annotations.NotNull;
 import tronka.ordinarydiscordintegration.config.Config;
+import tronka.ordinarydiscordintegration.linking.LinkManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,6 +50,7 @@ public class OrdinaryDiscordIntegration extends ListenerAdapter implements Dedic
     private static Thread jdaThread;
     private static final String webHookId = "odi-bridge-hook";
     private static Webhook chatBridgeWebhook;
+    public static boolean isReady = false;
 
     @Override
     public void onInitializeServer() {
@@ -96,11 +101,12 @@ public class OrdinaryDiscordIntegration extends ListenerAdapter implements Dedic
         guild.updateCommands()
                 .addCommands(
                         Commands.slash("link", "Link your minecraft with the code you got when joining")
-                                .addOption(OptionType.STRING, "code", "Link code", true)
-                                .addSubcommands(new SubcommandData("alt", "Link an alt account")
-                                        .addOption(OptionType.STRING, "code", "Link code", true),
-                                        new SubcommandData("unlink", "Unlink your account")
-//                                                .addOption(OptionType.USER, "user", "user to unlink")
+                                .addOption(OptionType.STRING, "code", "Link code", true),
+                        Commands.slash("linking", "Misc linking stuff")
+                                .addSubcommands(new SubcommandData("get", "Retrieve linking information")
+                                                .addOption(OptionType.USER, "user", "whose data to get"),
+                                            new SubcommandData("unlink", "Unlink your account")
+                                                .addOption(OptionType.USER, "user", "user to unlink")
                                         ),
                         Commands.slash("list", "List the currently online players"),
                         Commands.slash("status", "Show server status")
@@ -116,10 +122,16 @@ public class OrdinaryDiscordIntegration extends ListenerAdapter implements Dedic
             })).queue();
         }
 
-
-        if (Config.INSTANCE.unlinkOnLeave) {
-            // unlink players
-        }
+        guild.loadMembers().onSuccess(members -> {
+            isReady = true;
+            if (Config.INSTANCE.unlinkOnLeave) {
+                // unlink players
+            }
+        }).onError(t -> {
+            LOGGER.severe("Unable to load members");
+            LOGGER.severe(t.toString());
+            isReady = true;
+        });
     }
 
     @Override
@@ -130,7 +142,11 @@ public class OrdinaryDiscordIntegration extends ListenerAdapter implements Dedic
         if (event.getAuthor().isBot()) {
             return;
         }
-        sendChatMessage(Text.of(event.getMessage().getContentStripped()));
+        var message = Text.literal("[")
+                .append(Text.literal(event.getAuthor().getName()).formatted(Formatting.DARK_AQUA))
+                .append("] >> ")
+                .append(event.getMessage().getContentRaw());
+        sendChatMessage(message);
     }
 
     public void sendChatMessage(Text message) {
@@ -143,7 +159,8 @@ public class OrdinaryDiscordIntegration extends ListenerAdapter implements Dedic
         if (chatBridgeWebhook != null) {
             sendAsWebhook(signedMessage.getContent().getLiteralString(), serverPlayerEntity);
         } else {
-            serverChatChannel.sendMessage(Objects.requireNonNull(signedMessage.getContent().getLiteralString())).queue();
+            var formattedMessage = serverPlayerEntity.getName() + ": " + signedMessage.getContent().getLiteralString();
+            serverChatChannel.sendMessage(formattedMessage).queue();
         }
     }
 
@@ -160,9 +177,6 @@ public class OrdinaryDiscordIntegration extends ListenerAdapter implements Dedic
                 };
                 event.reply(message).setEphemeral(true).queue();
 
-                break;
-            case "alt":
-                LOGGER.info("alt");
                 break;
             case "list":
                 break;

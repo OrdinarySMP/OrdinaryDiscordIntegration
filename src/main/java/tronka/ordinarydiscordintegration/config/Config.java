@@ -37,6 +37,11 @@ public class Config {
     }
 
 
+    public static class MessageStrings {
+
+    }
+
+
 
     private static Config loadConfig(){
         var configDir = FabricLoader.getInstance().getConfigDir();
