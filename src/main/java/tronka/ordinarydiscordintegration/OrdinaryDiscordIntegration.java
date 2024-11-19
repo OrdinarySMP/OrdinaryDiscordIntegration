@@ -2,8 +2,10 @@ package tronka.ordinarydiscordintegration;
 
 import club.minnced.discord.webhook.external.JDAWebhookClient;
 import club.minnced.discord.webhook.send.WebhookMessageBuilder;
+import com.mojang.logging.LogUtils;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.Webhook;
@@ -12,6 +14,7 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.events.session.ReadyEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
@@ -24,28 +27,26 @@ import net.minecraft.network.message.MessageType;
 import net.minecraft.network.message.SignedMessage;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
-import net.minecraft.text.TextContent;
-import net.minecraft.util.Formatting;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
 import tronka.ordinarydiscordintegration.config.Config;
 import tronka.ordinarydiscordintegration.linking.LinkManager;
+import tronka.ordinarydiscordintegration.linking.PlayerData;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
-import java.util.logging.LogManager;
-import java.util.logging.Logger;
 
 public class OrdinaryDiscordIntegration extends ListenerAdapter implements DedicatedServerModInitializer {
     public static final String ModId = "ordinarydiscordintegration";
-    public static final Logger LOGGER = LogManager.getLogManager().getLogger(ModId);
+    public static final Logger LOGGER = LogUtils.getLogger();
     public static JDA jda;
-    public TextChannel serverChatChannel;
+    public static TextChannel serverChatChannel;
+    public static TextChannel consoleChannel;
     public static Guild guild;
     public static List<Role> requiredRolesToJoin;
+    public static List<Role> joinAssignRoles;
     public static MinecraftServer server;
     private static Thread jdaThread;
     private static final String webHookId = "odi-bridge-hook";
@@ -60,6 +61,7 @@ public class OrdinaryDiscordIntegration extends ListenerAdapter implements Dedic
         ServerMessageEvents.CHAT_MESSAGE.register(this::onChatMessage);
         ServerLifecycleEvents.SERVER_STARTING.register(s -> server = s);
         ServerLifecycleEvents.SERVER_STOPPING.register(this::onServerStopping);
+
         jdaThread = new Thread(this::startJDA);
         jdaThread.start();
     }
@@ -75,32 +77,39 @@ public class OrdinaryDiscordIntegration extends ListenerAdapter implements Dedic
         jda.shutdownNow();
     }
 
+    public static void onCommandExecute(String command, ServerPlayerEntity player) {
+        if (consoleChannel == null) {
+            return;
+        }
+        if (!Config.INSTANCE.showCommandsInConsole) {
+            return;
+        }
+        consoleChannel.sendMessage(
+                Config.INSTANCE.messages.commandExecutedInfoText
+                        .replace("%user%", player.getName().getString())
+                        .replace("%msg%", command)
+        ).queue();
+    }
+
 
 
     @Override
     public void onReady(@NotNull ReadyEvent event) {
-        serverChatChannel = jda.getChannelById(TextChannel.class, Config.INSTANCE.serverChatChannel);
+        serverChatChannel = getTextChannel(Config.INSTANCE.serverChatChannel);
+        consoleChannel = getTextChannel(Config.INSTANCE.consoleChannel);
+
         if (serverChatChannel == null) {
             throw new RuntimeException("Please enter a valid serverChatChannelId");
         }
+
         guild = serverChatChannel.getGuild();
-        requiredRolesToJoin = new ArrayList<>();
-        for (var roleId : Config.INSTANCE.joining.requiredJoinRoles) {
-            var role = guild.getRoleById(roleId);
-            if (role == null) {
-                var namedRole = guild.getRoles().stream().filter(r -> r.getName().equals(roleId)).findFirst();
-                if (namedRole.isEmpty()) {
-                    LOGGER.warning("Could not find role with id \"%s\"".formatted(roleId));
-                    continue;
-                }
-                role = namedRole.get();
-            }
-            requiredRolesToJoin.add(role);
-        }
+        requiredRolesToJoin = parseRoleList(Config.INSTANCE.joining.requiredJoinRoles);
+        joinAssignRoles = parseRoleList(Config.INSTANCE.joining.assignRoleAtJoin);
+
 
         guild.updateCommands()
                 .addCommands(
-                        Commands.slash("link", "Link your minecraft with the code you got when joining")
+                        Commands.slash("plink", "Link your minecraft with the code you got when joining")
                                 .addOption(OptionType.STRING, "code", "Link code", true),
                         Commands.slash("linking", "Misc linking stuff")
                                 .addSubcommands(new SubcommandData("get", "Retrieve linking information")
@@ -108,9 +117,9 @@ public class OrdinaryDiscordIntegration extends ListenerAdapter implements Dedic
                                             new SubcommandData("unlink", "Unlink your account")
                                                 .addOption(OptionType.USER, "user", "user to unlink")
                                         ),
-                        Commands.slash("list", "List the currently online players"),
-                        Commands.slash("status", "Show server status")
+                        Commands.slash("list", "List the currently online players")
                 ).queue();
+
         if (Config.INSTANCE.useWebHooks) {
             serverChatChannel.retrieveWebhooks().onSuccess((webhooks -> {
                 var hook = webhooks.stream().filter(w -> w.getOwner() == guild.getSelfMember()).findFirst();
@@ -125,13 +134,36 @@ public class OrdinaryDiscordIntegration extends ListenerAdapter implements Dedic
         guild.loadMembers().onSuccess(members -> {
             isReady = true;
             if (Config.INSTANCE.unlinkOnLeave) {
-                // unlink players
+
+                LinkManager.unlinkPlayers(members);
             }
         }).onError(t -> {
-            LOGGER.severe("Unable to load members");
-            LOGGER.severe(t.toString());
+            LOGGER.error("Unable to load members", t);
             isReady = true;
         });
+    }
+
+    private static List<Role> parseRoleList(List<String> roleIds) {
+        var roles = new ArrayList<Role>();
+        if (roleIds == null) { return roles; }
+        for (var roleId : roleIds) {
+            var role = guild.getRoleById(roleId);
+            if (role == null) {
+                var namedRole = guild.getRoles().stream().filter(r -> r.getName().equals(roleId)).findFirst();
+                if (namedRole.isEmpty()) {
+                    LOGGER.warn("Could not find role with id \"{}\"", roleId);
+                    continue;
+                }
+                role = namedRole.get();
+            }
+            roles.add(role);
+        }
+        return roles;
+    }
+
+    private static TextChannel getTextChannel(String id) {
+        if (id == null || id.length() < 5) { return null; }
+        return jda.getTextChannelById(id);
     }
 
     @Override
@@ -142,10 +174,11 @@ public class OrdinaryDiscordIntegration extends ListenerAdapter implements Dedic
         if (event.getAuthor().isBot()) {
             return;
         }
-        var message = Text.literal("[")
-                .append(Text.literal(event.getAuthor().getName()).formatted(Formatting.DARK_AQUA))
-                .append("] >> ")
-                .append(event.getMessage().getContentRaw());
+        var message = Text.of(
+                Config.INSTANCE.messages.chatMessageFormat
+                        .replace("%user%", event.getAuthor().getName())
+                        .replace("%msg%", event.getMessage().getContentDisplay())
+        );
         sendChatMessage(message);
     }
 
@@ -166,27 +199,64 @@ public class OrdinaryDiscordIntegration extends ListenerAdapter implements Dedic
 
     @Override
     public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
+        if (event.getMember() == null || event.getMember().getGuild() != guild) { return; }
         switch (event.getName()) {
-            case "link":
-
+            case "link" -> {
                 var code = event.getOptions().getFirst().getAsString();
-                var message = switch(LinkManager.confirmLink(event.getUser().getIdLong(), code)) {
-                    case LINKED -> "Successfully linked your account";
-                    case FAILED_UNKNOWN -> "Unknown code, did you copy correctly?";
-                    case FAILED_ALREADY_LINKED -> "You already have a Minecraft Account linked";
-                };
+                var message = LinkManager.confirmLink(event.getUser().getIdLong(), code);
                 event.reply(message).setEphemeral(true).queue();
+            }
+            case "list" -> {
+                event.reply(String.join(", ", server.getPlayerNames())).setEphemeral(true).queue();
+            }
+            case "linking" -> {
+                var user = event.getOption("user", OptionMapping::getAsUser);
+                if (user == null) {
+                    user = event.getUser();
+                }
+                var plink = LinkManager.getDataOf(user.getIdLong());
+                switch (event.getSubcommandName()) {
+                    case "get" -> {
+                        String message;
+                        if (plink.isPresent()) {
+                            var link = plink.get();
+                            message = user.getAsMention() + " is linked to " + link.getPlayerName();
+                            var alts = link.getAlts();
+                            if (!alts.isEmpty()) {
+                                message += "\nWith " + alts.size() + " alts: " + String.join(", ", alts.stream().map(PlayerData::getName).toList());
+                            }
 
-                break;
-            case "list":
-                break;
-            case "status":
-                break;
+                        } else {
+                            message = user.getAsMention() + " is not linked to any player";
+                        }
+                        event.reply(message).setEphemeral(true).queue();
+                    }
+                    case "unlink" -> {
+                        if (plink.isEmpty()) {
+                            var message = user.equals(event.getUser()) ?
+                                    "You are not linked to any player" :
+                                    user.getAsMention() + " is not linked to any player";
+                            event.reply(message).setEphemeral(true).queue();
+                            return;
+                        }
+                        if (!user.equals(event.getUser()) && !event.getMember().getPermissions().contains(Permission.ADMINISTRATOR)) {
+                            event.reply("You do not have permission to use this command!").setEphemeral(true).queue();
+                            return;
+                        }
+                        LinkManager.unlinkPlayer(user.getIdLong());
+                        event.reply("Successfully unlinked " + user.getAsMention()).setEphemeral(true).queue();
+                    }
+                    case null -> {}
+                    default -> throw new IllegalStateException("Unexpected value: " + event.getSubcommandName());
+                }
+            }
         }
     }
 
     private static String getAvatarUrl(ServerPlayerEntity player) {
-        return Config.INSTANCE.avatarUrl.replace("%UUID%", player.getUuid().toString()).replace("%randomUUID%", UUID.randomUUID().toString());
+        return Config.INSTANCE.avatarUrl
+                .replace("%UUID%", player.getUuid().toString())
+                .replace("%randomUUID%", UUID.randomUUID().toString());
     }
 
     public static void sendAsWebhook(String message, ServerPlayerEntity player) {

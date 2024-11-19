@@ -2,6 +2,7 @@ package tronka.ordinarydiscordintegration.linking;
 
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 public interface LinkData {
     Optional<PlayerLink> getPlayerLink(UUID playerId);
@@ -10,4 +11,6 @@ public interface LinkData {
     void addPlayerLink(PlayerLink playerLink);
     void removePlayerLink(PlayerLink playerLink);
     void updatePlayerLink(PlayerLink playerLink);
+
+    Stream<PlayerLink> getPlayerLinks();
 }

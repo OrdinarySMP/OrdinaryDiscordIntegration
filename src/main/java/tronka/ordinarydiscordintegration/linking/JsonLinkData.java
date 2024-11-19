@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 public class JsonLinkData implements LinkData {
     private List<PlayerLink> links;
@@ -34,7 +35,6 @@ public class JsonLinkData implements LinkData {
             links = new ArrayList<>();
         }
         System.out.println("Loaded " + links.size() + " player links");
-        links.forEach(l -> System.out.println(l.getPlayerName()));
     }
 
     @Override
@@ -68,11 +68,16 @@ public class JsonLinkData implements LinkData {
         try (FileWriter writer = new FileWriter(file)) {
             gson.toJson(links, writer);
         } catch (IOException e) {
-            OrdinaryDiscordIntegration.LOGGER.severe("Failed to save link data to file (%s)".formatted(file.getAbsolutePath()));
+            OrdinaryDiscordIntegration.LOGGER.error("Failed to save link data to file {}", file.getAbsolutePath(), e);
         }
     }
 
     public static LinkData from(File file) {
         return new JsonLinkData(file);
+    }
+
+    @Override
+    public Stream<PlayerLink> getPlayerLinks() {
+        return links.stream();
     }
 }

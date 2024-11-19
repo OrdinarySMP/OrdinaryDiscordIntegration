@@ -8,7 +8,7 @@ public class PlayerLink {
     private UUID playerId;
     private String playerName;
     private long discordId;
-    private List<UUID> alts;
+    private List<PlayerData> alts;
     private transient LinkData dataObj;
 
     public PlayerLink() {
@@ -44,25 +44,30 @@ public class PlayerLink {
         return discordId;
     }
 
-    public void addAlt(UUID uuid) {
+    public void addAlt(PlayerData uuid) {
         alts.add(uuid);
         dataObj.updatePlayerLink(this);
     }
 
     public void removeAlt(UUID uuid) {
-        alts.remove(uuid);
-        dataObj.updatePlayerLink(null);
+        alts.removeIf(player -> player.getId().equals(uuid));
+        dataObj.updatePlayerLink(this);
+    }
+
+    public void removeAlt(PlayerData data) {
+        alts.remove(data);
+        dataObj.updatePlayerLink(this);
     }
 
     public boolean hasAlt(UUID uuid) {
-        return alts.stream().anyMatch(uuid::equals);
+        return alts.stream().map(PlayerData::getId).anyMatch(uuid::equals);
     }
 
     public int altCount() {
         return alts.size();
     }
 
-    public ImmutableList<UUID> getAlts() {
+    public ImmutableList<PlayerData> getAlts() {
         return ImmutableList.copyOf(alts);
     }
 

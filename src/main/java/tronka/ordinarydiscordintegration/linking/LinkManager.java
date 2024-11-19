@@ -8,6 +8,7 @@ import tronka.ordinarydiscordintegration.OrdinaryDiscordIntegration;
 import tronka.ordinarydiscordintegration.config.Config;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class LinkManager {
 
@@ -20,7 +21,7 @@ public class LinkManager {
     static LinkData linkData = JsonLinkData.from(FabricLoader.getInstance().getConfigDir().resolve(OrdinaryDiscordIntegration.ModId + ".player-links.json").toFile());
 
 
-    private static Optional<Member> getDiscordOf(UUID playerId) {
+    public static Optional<Member> getDiscordOf(UUID playerId) {
         var link = linkData.getPlayerLink(playerId);
         if (link.isPresent()) {
             var member = OrdinaryDiscordIntegration.guild.getMemberById(link.get().getDiscordId());
@@ -29,6 +30,14 @@ public class LinkManager {
             }
         }
         return Optional.empty();
+    }
+
+    public static Optional<PlayerLink> getDataOf(long discordId) {
+        return linkData.getPlayerLink(discordId);
+    }
+
+    public static Optional<PlayerLink> getDataOf(UUID playerId) {
+        return linkData.getPlayerLink(playerId);
     }
 
 
@@ -49,12 +58,13 @@ public class LinkManager {
         return Config.INSTANCE.strings.kickMissingRoles;
     }
 
-    public static LinkResult confirmLink(long discordId, String code) {
-        if (linkData.getPlayerLink(discordId).isPresent()) { return LinkResult.FAILED_ALREADY_LINKED; }
+    public static String confirmLink(long discordId, String code) {
+        if (linkData.getPlayerLink(discordId).isPresent()) { return Config.INSTANCE.linkResults.failedTooManyLinked; }
         var linkRequest = getPlayerLinkFromCode(code);
-        if (linkRequest.isEmpty()) { return LinkResult.FAILED_UNKNOWN; }
+        if (linkRequest.isEmpty()) { return Config.INSTANCE.linkResults.failedUnknownCode; }
         linkData.addPlayerLink(new PlayerLink(linkRequest.get(), discordId));
-        return LinkResult.LINKED;
+        return Config.INSTANCE.linkResults.linkSuccess
+                .replace("%name%", linkRequest.get().getName());
     }
 
     private static Optional<LinkRequest> getPlayerLinkFromCode(String code) {
@@ -89,5 +99,23 @@ public class LinkManager {
         linkRequests.entrySet().removeIf(request -> request.getValue().isExpired());
     }
 
+    public static void unlinkPlayers(List<Member> members) {
+        var memberSet = members.stream().map(Member::getIdLong).collect(Collectors.toSet());
+        final int[] purgedCount = {0};
+        linkData.getPlayerLinks().forEach(link -> {
+            if (!memberSet.contains(link.getDiscordId())) {
+                linkData.removePlayerLink(link);
+                OrdinaryDiscordIntegration.LOGGER.info("Removed link {} from members list", link.getDiscordId());
+                purgedCount[0] += 1;
+            }
+        });
+        if (purgedCount[0] != 0) {
+            OrdinaryDiscordIntegration.LOGGER.info("Purged {} linked players", purgedCount[0]);
+        }
+    }
+
+    public static void unlinkPlayer(long id) {
+        linkData.getPlayerLink(id).ifPresent(linkData::removePlayerLink);
+    }
 
 }
