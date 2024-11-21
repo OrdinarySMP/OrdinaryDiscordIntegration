@@ -15,6 +15,6 @@ public class ServerPlayNetworkHandlerMixin {
 
     @Inject(method = "executeCommand", at = @At("HEAD"))
     private void onExecuteCommand(String command, CallbackInfo ci) {
-        OrdinaryDiscordIntegration.onCommandExecute(command, player);
+        OrdinaryDiscordIntegration.getInstance().getConsoleBridge().onCommandExecute(command, player);
     }
 }

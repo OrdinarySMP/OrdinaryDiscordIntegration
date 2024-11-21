@@ -2,7 +2,8 @@ package tronka.ordinarydiscordintegration.linking;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import tronka.ordinarydiscordintegration.OrdinaryDiscordIntegration;
+import com.mojang.logging.LogUtils;
+import org.slf4j.Logger;
 
 import java.io.File;
 import java.io.FileReader;
@@ -18,6 +19,7 @@ public class JsonLinkData implements LinkData {
     private List<PlayerLink> links;
     private final File file;
     private static final Gson gson = new Gson();
+    private static final Logger LOGGER = LogUtils.getLogger();
 
     private JsonLinkData(File file) {
         this.file = file;
@@ -34,6 +36,7 @@ public class JsonLinkData implements LinkData {
             // gson failed to parse a valid list
             links = new ArrayList<>();
         }
+        links.forEach(link -> link.setDataObj(this));
         System.out.println("Loaded " + links.size() + " player links");
     }
 
@@ -50,6 +53,7 @@ public class JsonLinkData implements LinkData {
     @Override
     public void addPlayerLink(PlayerLink playerLink) {
         links.add(playerLink);
+        playerLink.setDataObj(this);
         onUpdated();
     }
 
@@ -68,7 +72,7 @@ public class JsonLinkData implements LinkData {
         try (FileWriter writer = new FileWriter(file)) {
             gson.toJson(links, writer);
         } catch (IOException e) {
-            OrdinaryDiscordIntegration.LOGGER.error("Failed to save link data to file {}", file.getAbsolutePath(), e);
+            LOGGER.error("Failed to save link data to file {}", file.getAbsolutePath(), e);
         }
     }
 

@@ -1,30 +1,42 @@
 package tronka.ordinarydiscordintegration.linking;
 
 import com.mojang.authlib.GameProfile;
+import com.mojang.logging.LogUtils;
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.Role;
+import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.internal.utils.PermissionUtil;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.server.network.ServerPlayerEntity;
+import org.slf4j.Logger;
 import tronka.ordinarydiscordintegration.OrdinaryDiscordIntegration;
-import tronka.ordinarydiscordintegration.config.Config;
+import tronka.ordinarydiscordintegration.Utils;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class LinkManager {
-
-//    static BiMap<UUID, Long> playerLinks = HashBiMap.create();
-//    static Map<UUID, UUID> altMap = new HashMap<>();
-//
-    static Map<String, LinkRequest> linkRequests = new HashMap<>();
+public class LinkManager extends ListenerAdapter {
     private static final int PURGE_LIMIT = 30;
     private static final Random RANDOM = new Random();
-    static LinkData linkData = JsonLinkData.from(FabricLoader.getInstance().getConfigDir().resolve(OrdinaryDiscordIntegration.ModId + ".player-links.json").toFile());
+    private static final Logger LOGGER = LogUtils.getLogger();
+    private final Map<String, LinkRequest> linkRequests = new HashMap<>();
+    private final LinkData linkData = JsonLinkData.from(FabricLoader.getInstance().getConfigDir().resolve(OrdinaryDiscordIntegration.ModId + ".player-links.json").toFile());
+    private final OrdinaryDiscordIntegration integration;
+    private final List<Role> requiredRoles;
+    private final List<Role> joinRoles;
 
 
-    public static Optional<Member> getDiscordOf(UUID playerId) {
+    public LinkManager(OrdinaryDiscordIntegration integration) {
+        this.integration = integration;
+        requiredRoles = Utils.parseRoleList(integration.getGuild(), integration.getConfig().joining.requiredRoles);
+        joinRoles = Utils.parseRoleList(integration.getGuild(), integration.getConfig().joining.joinRoles);
+    }
+
+    public Optional<Member> getDiscordOf(UUID playerId) {
         var link = linkData.getPlayerLink(playerId);
         if (link.isPresent()) {
-            var member = OrdinaryDiscordIntegration.guild.getMemberById(link.get().getDiscordId());
+            var member = integration.getGuild().getMemberById(link.get().getDiscordId());
             if (member != null) {
                 return Optional.of(member);
             }
@@ -32,42 +44,59 @@ public class LinkManager {
         return Optional.empty();
     }
 
-    public static Optional<PlayerLink> getDataOf(long discordId) {
+    public Optional<PlayerLink> getDataOf(long discordId) {
         return linkData.getPlayerLink(discordId);
     }
 
-    public static Optional<PlayerLink> getDataOf(UUID playerId) {
+    public Optional<PlayerLink> getDataOf(UUID playerId) {
         return linkData.getPlayerLink(playerId);
     }
 
-
-    public static boolean canJoin(UUID playerId) {
-        if (!Config.INSTANCE.joining.enableLinking) {return true;}
+    public boolean canJoin(UUID playerId) {
+        if (!integration.getConfig().joining.enableLinking) {return true;}
         var member = getDiscordOf(playerId);
         return member.filter(
-                value -> Set.copyOf(value.getRoles()).containsAll(OrdinaryDiscordIntegration.requiredRolesToJoin))
+                value -> Set.copyOf(value.getRoles()).containsAll(requiredRoles))
                 .isPresent();
     }
 
-    public static String getJoinError(GameProfile profile) {
+    public void onPlayerJoin(ServerPlayerEntity player) {
+        var memberOptional = getDiscordOf(player.getUuid());
+        if (memberOptional.isEmpty()) {
+            return;
+        }
+        var member = memberOptional.get();
+        if (!PermissionUtil.canInteract(integration.getGuild().getSelfMember(), member)) {
+            return;
+        }
+        if (integration.getConfig().joining.renameOnJoin
+                && PermissionUtil.checkPermission(integration.getGuild().getSelfMember(), Permission.NICKNAME_MANAGE)) {
+            member.modifyNickname(player.getName().getString()).queue();
+        }
+        if (PermissionUtil.checkPermission(integration.getGuild().getSelfMember(), Permission.MANAGE_ROLES)) {
+            member.getGuild().modifyMemberRoles(member, joinRoles, Collections.emptyList()).queue();
+        }
+    }
+
+    public String getJoinError(GameProfile profile) {
         var member = getDiscordOf(profile.getId());
         if (member.isEmpty()) {
             var code = generateLinkCode(profile);
-            return Config.INSTANCE.strings.kickLinkCode.formatted(code);
+            return integration.getConfig().strings.kickLinkCode.formatted(code);
         }
-        return Config.INSTANCE.strings.kickMissingRoles;
+        return integration.getConfig().strings.kickMissingRoles;
     }
 
-    public static String confirmLink(long discordId, String code) {
-        if (linkData.getPlayerLink(discordId).isPresent()) { return Config.INSTANCE.linkResults.failedTooManyLinked; }
+    public String confirmLink(long discordId, String code) {
+        if (linkData.getPlayerLink(discordId).isPresent()) { return integration.getConfig().linkResults.failedTooManyLinked; }
         var linkRequest = getPlayerLinkFromCode(code);
-        if (linkRequest.isEmpty()) { return Config.INSTANCE.linkResults.failedUnknownCode; }
+        if (linkRequest.isEmpty()) { return integration.getConfig().linkResults.failedUnknownCode; }
         linkData.addPlayerLink(new PlayerLink(linkRequest.get(), discordId));
-        return Config.INSTANCE.linkResults.linkSuccess
+        return integration.getConfig().linkResults.linkSuccess
                 .replace("%name%", linkRequest.get().getName());
     }
 
-    private static Optional<LinkRequest> getPlayerLinkFromCode(String code) {
+    private Optional<LinkRequest> getPlayerLinkFromCode(String code) {
         if (!linkRequests.containsKey(code)) {
             return Optional.empty();
         }
@@ -78,12 +107,12 @@ public class LinkManager {
         return Optional.of(request);
     }
 
-    public static String generateLinkCode(GameProfile profile) {
+    public String generateLinkCode(GameProfile profile) {
         if (linkRequests.size() >= PURGE_LIMIT) {
             purgeCodes();
         }
 
-        long expiryTime = System.currentTimeMillis() + Config.INSTANCE.joining.linkCodeExpireMinutes * 60 * 1000;
+        long expiryTime = System.currentTimeMillis() + integration.getConfig().joining.linkCodeExpireMinutes * 60 * 1000;
         String code;
         do {
             code = String.valueOf(RANDOM.nextInt(100000, 1000000));  // 6 digit code
@@ -93,28 +122,29 @@ public class LinkManager {
         return code;
     }
 
-    private static void purgeCodes() {
-        long time = System.currentTimeMillis();
-
+    private void purgeCodes() {
         linkRequests.entrySet().removeIf(request -> request.getValue().isExpired());
     }
 
-    public static void unlinkPlayers(List<Member> members) {
+    public void unlinkPlayers(List<Member> members) {
+        if (!integration.getConfig().unlinkOnLeave) {
+            return;
+        }
         var memberSet = members.stream().map(Member::getIdLong).collect(Collectors.toSet());
         final int[] purgedCount = {0};
         linkData.getPlayerLinks().forEach(link -> {
             if (!memberSet.contains(link.getDiscordId())) {
                 linkData.removePlayerLink(link);
-                OrdinaryDiscordIntegration.LOGGER.info("Removed link {} from members list", link.getDiscordId());
+                LOGGER.info("Removed link {} from members list", link.getDiscordId());
                 purgedCount[0] += 1;
             }
         });
         if (purgedCount[0] != 0) {
-            OrdinaryDiscordIntegration.LOGGER.info("Purged {} linked players", purgedCount[0]);
+            LOGGER.info("Purged {} linked players", purgedCount[0]);
         }
     }
 
-    public static void unlinkPlayer(long id) {
+    public void unlinkPlayer(long id) {
         linkData.getPlayerLink(id).ifPresent(linkData::removePlayerLink);
     }
 

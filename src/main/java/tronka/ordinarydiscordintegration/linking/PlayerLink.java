@@ -50,7 +50,7 @@ public class PlayerLink {
     }
 
     public void removeAlt(UUID uuid) {
-        alts.removeIf(player -> player.getId().equals(uuid));
+        alts.removeIf(player -> player.id().equals(uuid));
         dataObj.updatePlayerLink(this);
     }
 
@@ -60,7 +60,7 @@ public class PlayerLink {
     }
 
     public boolean hasAlt(UUID uuid) {
-        return alts.stream().map(PlayerData::getId).anyMatch(uuid::equals);
+        return alts.stream().map(PlayerData::id).anyMatch(uuid::equals);
     }
 
     public int altCount() {

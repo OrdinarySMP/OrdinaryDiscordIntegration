@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Config {
-    public static Config INSTANCE = loadConfig();
 
     public String botToken = "";
     public String serverChatChannel = "";
@@ -29,8 +28,8 @@ public class Config {
     public static class JoinOptions {
         public boolean enableLinking = true;
         public long linkCodeExpireMinutes = 10;
-        public List<String> requiredJoinRoles = new ArrayList<>();
-        public List<String> assignRoleAtJoin = new ArrayList<>();
+        public List<String> requiredRoles = new ArrayList<>();
+        public List<String> joinRoles = new ArrayList<>();
         public boolean renameOnJoin = true;
     }
 
@@ -48,6 +47,8 @@ public class Config {
         public String commandExecutedInfoText = "%user% executed ``%msg%``";
         public String playerJoinMessage = "%user% joined";
         public String playerLeaveMessage = "%user% left";
+        public String startMessage = "Server started";
+        public String stopMessage = "Server stopped";
     }
 
     public DiscordLinkResults linkResults = new DiscordLinkResults();
@@ -60,7 +61,7 @@ public class Config {
 
 
 
-    private static Config loadConfig(){
+    public static Config loadConfig(){
         var configDir = FabricLoader.getInstance().getConfigDir();
         var configFile = configDir.resolve(OrdinaryDiscordIntegration.ModId + ".toml").toFile();
         if (configFile.exists()){
