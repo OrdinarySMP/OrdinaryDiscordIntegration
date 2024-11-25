@@ -28,6 +28,7 @@ repositories {
     // See https://docs.gradle.org/current/userguide/declaring_repositories.html
     // for more information about repositories.
     mavenCentral()
+    maven { url "https://api.modrinth.com/maven" }
 }
 
 dependencies {
@@ -43,6 +44,8 @@ dependencies {
     }
     implementation 'club.minnced:discord-webhooks:0.8.4'
     implementation 'com.moandjiezana.toml:toml4j:0.7.2'
+    compileOnly 'net.luckperms:api:5.4'
+    modCompileOnly "maven.modrinth:vanish:1.5.9+1.21.3"
 }
 
 processResources {

@@ -6,13 +6,12 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
-import tronka.ordinarydiscordintegration.linking.LinkManager;
 import tronka.ordinarydiscordintegration.linking.PlayerData;
 
 
-public class CommandHandler extends ListenerAdapter {
+public class DiscordCommandHandler extends ListenerAdapter {
     OrdinaryDiscordIntegration integration;
-    public CommandHandler(OrdinaryDiscordIntegration integration) {
+    public DiscordCommandHandler(OrdinaryDiscordIntegration integration) {
         this.integration = integration;
 
         integration.getGuild().updateCommands()
@@ -39,7 +38,11 @@ public class CommandHandler extends ListenerAdapter {
                 event.reply(message).setEphemeral(true).queue();
             }
             case "list" -> {
-                event.reply(String.join(", ", integration.getServer().getPlayerNames())).setEphemeral(true).queue();
+                var names = integration.getServer().getPlayerManager()
+                        .getPlayerList().stream()
+                        .filter(player -> !integration.getVanishIntegration().isVanished(player))
+                        .map(player -> player.getName().getLiteralString());
+                event.reply(String.join(", ", names.toList())).setEphemeral(true).queue();
             }
             case "linking" -> {
                 runLinkingCommand(event);

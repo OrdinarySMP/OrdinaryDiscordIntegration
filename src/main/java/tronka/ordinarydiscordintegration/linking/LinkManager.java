@@ -5,6 +5,7 @@ import com.mojang.logging.LogUtils;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
+import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.internal.utils.PermissionUtil;
 import net.fabricmc.loader.api.FabricLoader;
@@ -55,9 +56,9 @@ public class LinkManager extends ListenerAdapter {
     public boolean canJoin(UUID playerId) {
         if (!integration.getConfig().joining.enableLinking) {return true;}
         var member = getDiscordOf(playerId);
-        return member.filter(
-                value -> Set.copyOf(value.getRoles()).containsAll(requiredRoles))
-                .isPresent();
+        if (member.isEmpty()) {return false;}
+        if (integration.getConfig().joining.disallowTimeoutMembersToJoin && member.get().isTimedOut()) {return false;}
+        return Set.copyOf(member.get().getRoles()).containsAll(requiredRoles);
     }
 
     public void onPlayerJoin(ServerPlayerEntity player) {
@@ -82,16 +83,25 @@ public class LinkManager extends ListenerAdapter {
         var member = getDiscordOf(profile.getId());
         if (member.isEmpty()) {
             var code = generateLinkCode(profile);
-            return integration.getConfig().strings.kickLinkCode.formatted(code);
+            return integration.getConfig().kickMessages.kickLinkCode.formatted(code);
         }
-        return integration.getConfig().strings.kickMissingRoles;
+        return integration.getConfig().kickMessages.kickMissingRoles;
     }
 
     public String confirmLink(long discordId, String code) {
-        if (linkData.getPlayerLink(discordId).isPresent()) { return integration.getConfig().linkResults.failedTooManyLinked; }
         var linkRequest = getPlayerLinkFromCode(code);
         if (linkRequest.isEmpty()) { return integration.getConfig().linkResults.failedUnknownCode; }
-        linkData.addPlayerLink(new PlayerLink(linkRequest.get(), discordId));
+        var existing = linkData.getPlayerLink(discordId);
+        if (existing.isPresent()) {
+            var link = existing.get();
+            if (link.altCount() >= integration.getConfig().maxAlts) {
+                return integration.getConfig().linkResults.failedTooManyLinked;
+            }
+            link.addAlt(PlayerData.from(linkRequest.get()));
+            integration.getLuckPermsIntegration().setAlt(linkRequest.get().getPlayerId());
+        } else {
+            linkData.addPlayerLink(new PlayerLink(linkRequest.get(), discordId));
+        }
         return integration.getConfig().linkResults.linkSuccess
                 .replace("%name%", linkRequest.get().getName());
     }
@@ -135,7 +145,6 @@ public class LinkManager extends ListenerAdapter {
         linkData.getPlayerLinks().forEach(link -> {
             if (!memberSet.contains(link.getDiscordId())) {
                 linkData.removePlayerLink(link);
-                LOGGER.info("Removed link {} from members list", link.getDiscordId());
                 purgedCount[0] += 1;
             }
         });
@@ -148,4 +157,16 @@ public class LinkManager extends ListenerAdapter {
         linkData.getPlayerLink(id).ifPresent(linkData::removePlayerLink);
     }
 
+    public void unlinkPlayer(UUID uuid) {
+        linkData.getPlayerLink(uuid).ifPresent(linkData::removePlayerLink);
+    }
+
+    @Override
+    public void onGuildMemberRemove(GuildMemberRemoveEvent event) {
+        var member = event.getMember();
+        if (member != null) {
+            unlinkPlayer(member.getIdLong());
+            LOGGER.info("Removed link of \"{}\" because they left the guild.", member.getEffectiveName());
+        }
+    }
 }

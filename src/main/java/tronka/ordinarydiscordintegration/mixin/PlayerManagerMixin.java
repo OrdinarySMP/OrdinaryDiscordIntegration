@@ -32,8 +32,10 @@ public class PlayerManagerMixin {
     }
 
     @Inject(method = "onPlayerConnect", at = @At("HEAD"))
-    private void onPlayerJoin(ClientConnection connection, ServerPlayerEntity player, ConnectedClientData clientData, CallbackInfo ci){
-        OrdinaryDiscordIntegration.getInstance().getChatBridge().onPlayerJoin(player);
+    private void onPlayerJoin(ClientConnection connection, ServerPlayerEntity player, ConnectedClientData clientData, CallbackInfo ci) {
         OrdinaryDiscordIntegration.getInstance().getLinkManager().onPlayerJoin(player);
+        if (!OrdinaryDiscordIntegration.getInstance().getVanishIntegration().isVanished(player)) {
+            OrdinaryDiscordIntegration.getInstance().getChatBridge().onPlayerJoin(player);
+        }
     }
 }

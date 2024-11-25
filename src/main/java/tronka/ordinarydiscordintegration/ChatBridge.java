@@ -14,6 +14,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 
+import java.util.Objects;
 import java.util.UUID;
 
 public class ChatBridge extends ListenerAdapter {
@@ -22,6 +23,9 @@ public class ChatBridge extends ListenerAdapter {
     private Webhook webhook;
     private static final String webhookId = "odi-bridge-hook";
     private boolean stopped = false;
+    private ServerPlayerEntity lastMessageSender;
+    private String lastMessage;
+    private int repeatedCount = 0;
 
     public ChatBridge(OrdinaryDiscordIntegration integration, TextChannel serverChatChannel) {
         this.integration = integration;
@@ -89,11 +93,30 @@ public class ChatBridge extends ListenerAdapter {
         stopped = true;
     }
 
-    private void onMcChatMessage(SignedMessage signedMessage, ServerPlayerEntity serverPlayerEntity, MessageType.Parameters parameters) {
+
+    private void onMcChatMessage(SignedMessage signedMessage, ServerPlayerEntity player, MessageType.Parameters parameters) {
+        var message = signedMessage.getContent().getLiteralString();
+        if (integration.getConfig().stackMessages && lastMessageSender == player && Objects.equals(message, lastMessage)) {
+            repeatedCount++;
+            return;
+        } else if(repeatedCount > 0) {
+            var displayCounter = repeatedCount > 1 ? " (" + repeatedCount + ")" : "";
+            var updatedLastMessage = lastMessage + displayCounter;
+            sendDiscordMessage(updatedLastMessage, lastMessageSender);
+        }
+
+        sendDiscordMessage(message, player);
+
+        lastMessageSender = player;
+        lastMessage = signedMessage.getContent().getLiteralString();
+        repeatedCount = 0;
+    }
+
+    private void sendDiscordMessage(String message, ServerPlayerEntity sender) {
         if (webhook != null) {
-            sendAsWebhook(signedMessage.getContent().getLiteralString(), serverPlayerEntity);
+            sendAsWebhook(message, sender);
         } else {
-            var formattedMessage = serverPlayerEntity.getName() + ": " + signedMessage.getContent().getLiteralString();
+            var formattedMessage = sender.getName() + ": " + message;
             channel.sendMessage(formattedMessage).queue();
         }
     }

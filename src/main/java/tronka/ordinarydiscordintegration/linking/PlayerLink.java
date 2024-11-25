@@ -44,8 +44,8 @@ public class PlayerLink {
         return discordId;
     }
 
-    public void addAlt(PlayerData uuid) {
-        alts.add(uuid);
+    public void addAlt(PlayerData data) {
+        alts.add(data);
         dataObj.updatePlayerLink(this);
     }
 

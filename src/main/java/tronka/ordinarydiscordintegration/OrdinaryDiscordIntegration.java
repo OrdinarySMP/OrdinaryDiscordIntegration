@@ -14,6 +14,8 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.server.MinecraftServer;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
+import tronka.ordinarydiscordintegration.compat.LuckPermsIntegration;
+import tronka.ordinarydiscordintegration.compat.VanishIntegration;
 import tronka.ordinarydiscordintegration.config.Config;
 import tronka.ordinarydiscordintegration.linking.LinkManager;
 
@@ -24,12 +26,14 @@ public class OrdinaryDiscordIntegration extends ListenerAdapter implements Dedic
     private Guild guild;
     private MinecraftServer server;
     private boolean ready = false;
-    private CommandHandler commandHandler;
+    private DiscordCommandHandler commandHandler;
     private ConsoleBridge consoleBridge;
     private ChatBridge chatBridge;
     private static OrdinaryDiscordIntegration instance;
     private final Config config = Config.loadConfig();
     private LinkManager linkManager;
+    private LuckPermsIntegration luckPermsIntegration;
+    private VanishIntegration vanishIntegration;
 
     @Override
     public void onInitializeServer() {
@@ -42,7 +46,6 @@ public class OrdinaryDiscordIntegration extends ListenerAdapter implements Dedic
         Thread jdaThread = new Thread(this::startJDA);
         jdaThread.start();
     }
-
 
     private void startJDA() {
         jda = JDABuilder.createLight(config.botToken, GatewayIntent.GUILD_MESSAGES,GatewayIntent.MESSAGE_CONTENT, GatewayIntent.GUILD_MEMBERS)
@@ -65,10 +68,13 @@ public class OrdinaryDiscordIntegration extends ListenerAdapter implements Dedic
 
         guild = serverChatChannel.getGuild();
 
-        jda.addEventListener(commandHandler = new CommandHandler(this));
+        jda.addEventListener(commandHandler = new DiscordCommandHandler(this));
         jda.addEventListener(chatBridge = new ChatBridge(this, serverChatChannel));
         jda.addEventListener(consoleBridge = new ConsoleBridge(this, consoleChannel));
         jda.addEventListener(linkManager = new LinkManager(this));
+        var inGameCommand = new InGameUnlinkCommand(this);
+        luckPermsIntegration = new LuckPermsIntegration(this);
+        vanishIntegration = new VanishIntegration(this);
 
         guild.loadMembers().onSuccess(members -> {
            setReady();
@@ -103,7 +109,7 @@ public class OrdinaryDiscordIntegration extends ListenerAdapter implements Dedic
         return guild;
     }
 
-    public CommandHandler getCommandHandler() {
+    public DiscordCommandHandler getCommandHandler() {
         return commandHandler;
     }
 
@@ -117,5 +123,13 @@ public class OrdinaryDiscordIntegration extends ListenerAdapter implements Dedic
 
     public LinkManager getLinkManager() {
         return linkManager;
+    }
+
+    public LuckPermsIntegration getLuckPermsIntegration() {
+        return luckPermsIntegration;
+    }
+
+    public VanishIntegration getVanishIntegration() {
+        return vanishIntegration;
     }
 }
