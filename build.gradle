@@ -1,6 +1,7 @@
 plugins {
     id 'fabric-loom' version '1.8-SNAPSHOT'
     id 'maven-publish'
+    id 'com.github.johnrengelman.shadow' version "8+"
 }
 
 version = project.mod_version
@@ -31,6 +32,43 @@ repositories {
     maven { url "https://api.modrinth.com/maven" }
 }
 
+configurations {
+    embed
+    compileOnly.extendsFrom(embed)
+}
+
+shadowJar {
+    configurations = [project.configurations.embed]
+    exclude('META-INF/services/**')
+    relocate 'okhttp3', 'dcshadow.okhttp'
+    relocate 'okio', 'dcshadow.okio'
+    relocate 'club.minnced', 'dcshadow.club.minnced'
+    relocate 'com.sun', 'dcshadow.com.sun'
+    relocate 'com.iwebpp', 'dcshadow.com.iwebpp'
+    relocate 'com.neovisionaries', 'dcshadow.com.neovisionaries'
+    relocate 'gnu', 'dcshadow.gnu'
+    relocate 'org.apache.commons.collections4', 'dcshadow.org.apache.commons.collections4'
+    relocate('org.apache.commons.lang3', 'dcshadow.org.apache.commons.lang3')
+    relocate 'org.json', 'dcshadow.org.json'
+    relocate 'org.intellij', 'dcshadow.org.intellij'
+    relocate 'org.jetbrains', 'dcshadow.org.jetbrains'
+    relocate 'tomp2p', 'dcshadow.tomp2p'
+    relocate 'com.fasterxml', 'dcshadow.com.fasterxml'
+    relocate 'dev.vankka', 'dcshadow.dev.vankka'
+    relocate 'net.kyori', 'dcshadow.net.kyori'
+    relocate 'org.checkerframework', 'dcshadow.org.checkerframework'
+    relocate "com.moandjiezana", "dcshadow.com.moandjiezana"
+    relocate "ch.lambdaj", "dcshadow.ch.lambdaj"
+    relocate "emoji4j", "dcshadow.emoji4j"
+    relocate "javax.annotation", "dcshadow.javax.annotation"
+    relocate "net.sf", "dcshadow.net.sf"
+    relocate "org.hamcrest", "dcshadow.org.hamcrest"
+    relocate "org.objenesis", "dcshadow.org.objenesis"
+    relocate "kotlin", "dcshadow.kotlin"
+    relocate "com.vdurmont", "dcshadow.com.vdurmont"
+    relocate "com.google.gson", "dcshadow.com.google.gson"
+}
+
 dependencies {
     // To change the versions see the gradle.properties file
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
@@ -39,14 +77,16 @@ dependencies {
 
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-    implementation("net.dv8tion:JDA:5.1.2") {
+    embed implementation("net.dv8tion:JDA:5.1.2") {
         exclude module: "opus-java"
     }
-    implementation 'club.minnced:discord-webhooks:0.8.4'
-    implementation 'com.moandjiezana.toml:toml4j:0.7.2'
+
+    embed implementation('club.minnced:discord-webhooks:0.8.4')
+    embed implementation('com.moandjiezana.toml:toml4j:0.7.2')
     compileOnly 'net.luckperms:api:5.4'
     modCompileOnly "maven.modrinth:vanish:1.5.9+1.21.3"
 }
+tasks.build.dependsOn(tasks.shadowJar)
 
 processResources {
     inputs.property "version", project.version
@@ -88,6 +128,18 @@ jar {
     from("LICENSE") {
         rename { "${it}_${project.archivesBaseName}" }
     }
+}
+
+remapJar {
+    // wait until the shadowJar is done
+    dependsOn(shadowJar)
+    mustRunAfter(shadowJar)
+    // Set the input jar for the task. Here use the shadow Jar that include the .class of the transitive dependency
+    inputFile = file(shadowJar.archiveFile)
+}
+
+artifacts {
+    archives tasks.shadowJar
 }
 
 // configure the maven publication

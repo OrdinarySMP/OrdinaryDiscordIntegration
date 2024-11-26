@@ -10,7 +10,9 @@
     "defaultRequire": 1
   },
   "mixins": [
+    "AdvancementMixin",
     "NetworkHandlerMixin",
+    "ServerPlayerEntityMixin",
     "ServerPlayNetworkHandlerMixin"
   ]
 }

@@ -26,6 +26,9 @@ public class Config {
 
     public boolean stackMessages = false;
 
+    public boolean broadCastDeathMessages = true;
+    public boolean announceAdvancements = true;
+
     public static class JoinOptions {
         public boolean enableLinking = true;
         public long linkCodeExpireMinutes = 10;
@@ -50,6 +53,7 @@ public class Config {
         public String commandExecutedInfoText = "%user% executed ``%msg%``";
         public String playerJoinMessage = "%user% joined";
         public String playerLeaveMessage = "%user% left";
+        public String advancementMessage = "%user% just made the advancement **%title%**\n*%description%*";
         public String startMessage = "Server started";
         public String stopMessage = "Server stopped";
     }

@@ -2,12 +2,15 @@ package tronka.ordinarydiscordintegration;
 
 import club.minnced.discord.webhook.external.JDAWebhookClient;
 import club.minnced.discord.webhook.send.WebhookMessageBuilder;
+import com.mojang.logging.LogUtils;
 import net.dv8tion.jda.api.entities.Webhook;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.message.v1.ServerMessageEvents;
+import net.minecraft.advancement.AdvancementDisplay;
+import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.network.message.MessageType;
 import net.minecraft.network.message.SignedMessage;
 import net.minecraft.server.MinecraftServer;
@@ -80,6 +83,25 @@ public class ChatBridge extends ListenerAdapter {
                 integration.getConfig().messages.playerLeaveMessage
                         .replace("%user%", player.getName().getString())
         ).queue();
+    }
+
+    public void onPlayerDeath(ServerPlayerEntity player, DamageSource source) {
+        if (integration.getConfig().broadCastDeathMessages) {
+            channel.sendMessage(
+                    source.getDeathMessage(player).getString()
+            ).queue();
+        }
+    }
+
+    public void onReceiveAdvancement(ServerPlayerEntity player, AdvancementDisplay advancement){
+        if(integration.getConfig().announceAdvancements) {
+            channel.sendMessage(
+                    integration.getConfig().messages.advancementMessage
+                            .replace("%user%", player.getName().getString())
+                            .replace("%title%", advancement.getTitle().getString())
+                            .replace("%description%", advancement.getDescription().getString())
+            ).queue();
+        }
     }
 
     public void sendMcChatMessage(Text message) {

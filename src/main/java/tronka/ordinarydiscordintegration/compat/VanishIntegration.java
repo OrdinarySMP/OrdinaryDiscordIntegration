@@ -11,8 +11,13 @@ import java.util.UUID;
 public class VanishIntegration {
     private boolean loaded;
     public VanishIntegration(OrdinaryDiscordIntegration integration) {
-        if (!integration.getConfig().integrations.enableVanishIntegration) { return; }
+        if (!integration.getConfig().integrations.enableVanishIntegration) {
+            return;
+        }
         loaded = FabricLoader.getInstance().isModLoaded("melius-vanish");
+        if (!loaded) {
+            return;
+        }
         VanishEvents.VANISH_EVENT.register((player, isVanished) -> {
             if (isVanished) {
                 integration.getChatBridge().onPlayerLeave(player);

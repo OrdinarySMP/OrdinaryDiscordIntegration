@@ -38,4 +38,5 @@ public class PlayerManagerMixin {
             OrdinaryDiscordIntegration.getInstance().getChatBridge().onPlayerJoin(player);
         }
     }
+
 }
