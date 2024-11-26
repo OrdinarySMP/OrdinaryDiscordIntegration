@@ -1,6 +1,7 @@
 package tronka.ordinarydiscordintegration.linking;
 
 import com.google.common.collect.ImmutableList;
+import tronka.ordinarydiscordintegration.OrdinaryDiscordIntegration;
 
 import java.util.*;
 
@@ -22,6 +23,12 @@ public class PlayerLink {
     public PlayerLink(UUID playerId, String playerName, long discordId) {
         this.playerId = playerId;
         this.playerName = playerName;
+        if (playerName == null || playerName.isEmpty()) {
+            var player = OrdinaryDiscordIntegration.getInstance().getServer().getPlayerManager().getPlayer(playerId);
+            if (player != null) {
+                this.playerName = player.getName().getLiteralString();
+            }
+        }
         this.discordId = discordId;
         alts = new ArrayList<>();
     }

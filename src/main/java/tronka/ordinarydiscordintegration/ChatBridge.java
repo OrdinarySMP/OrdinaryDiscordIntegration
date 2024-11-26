@@ -2,7 +2,7 @@ package tronka.ordinarydiscordintegration;
 
 import club.minnced.discord.webhook.external.JDAWebhookClient;
 import club.minnced.discord.webhook.send.WebhookMessageBuilder;
-import com.mojang.logging.LogUtils;
+import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.Webhook;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -73,6 +73,7 @@ public class ChatBridge extends ListenerAdapter {
                 integration.getConfig().messages.playerJoinMessage
                         .replace("%user%", player.getName().getString())
         ).queue();
+        updateRichPresence(1);
     }
 
     public void onPlayerLeave(ServerPlayerEntity player) {
@@ -83,6 +84,18 @@ public class ChatBridge extends ListenerAdapter {
                 integration.getConfig().messages.playerLeaveMessage
                         .replace("%user%", player.getName().getString())
         ).queue();
+        updateRichPresence(-1);
+    }
+
+    private void updateRichPresence(int modifier) {
+        if (!integration.getConfig().showPlayerCountStatus) {
+            return;
+        }
+        var playerCount = integration.getServer().getPlayerManager().getPlayerList().stream()
+                .filter(p -> !integration.getVanishIntegration().isVanished(p)).count() + modifier;
+        integration.getJda().getPresence().setPresence(
+                Activity.playing(integration.getConfig().messages.onlineCount.formatted(playerCount)), false);
+
     }
 
     public void onPlayerDeath(ServerPlayerEntity player, DamageSource source) {

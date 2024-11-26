@@ -29,6 +29,8 @@ public class Config {
     public boolean broadCastDeathMessages = true;
     public boolean announceAdvancements = true;
 
+    public boolean showPlayerCountStatus = true;
+
     public static class JoinOptions {
         public boolean enableLinking = true;
         public long linkCodeExpireMinutes = 10;
@@ -56,6 +58,7 @@ public class Config {
         public String advancementMessage = "%user% just made the advancement **%title%**\n*%description%*";
         public String startMessage = "Server started";
         public String stopMessage = "Server stopped";
+        public String onlineCount = "%d players online";
     }
 
     public DiscordLinkResults linkResults = new DiscordLinkResults();

@@ -70,7 +70,9 @@ public class LinkManager extends ListenerAdapter {
         if (!PermissionUtil.canInteract(integration.getGuild().getSelfMember(), member)) {
             return;
         }
-        if (integration.getConfig().joining.renameOnJoin
+        var data = linkData.getPlayerLink(player.getUuid());
+        if (data.isPresent() && data.get().getPlayerId().equals(player.getUuid())
+                && integration.getConfig().joining.renameOnJoin
                 && PermissionUtil.checkPermission(integration.getGuild().getSelfMember(), Permission.NICKNAME_MANAGE)) {
             member.modifyNickname(player.getName().getString()).queue();
         }

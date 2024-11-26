@@ -16,7 +16,7 @@ public class DiscordCommandHandler extends ListenerAdapter {
 
         integration.getGuild().updateCommands()
                 .addCommands(
-                        net.dv8tion.jda.api.interactions.commands.build.Commands.slash("plink", "Link your minecraft with the code you got when joining")
+                        net.dv8tion.jda.api.interactions.commands.build.Commands.slash("link", "Link your minecraft with the code you got when joining")
                                 .addOption(OptionType.STRING, "code", "Link code", true),
                         net.dv8tion.jda.api.interactions.commands.build.Commands.slash("linking", "Misc linking stuff")
                                 .addSubcommands(new SubcommandData("get", "Retrieve linking information")
@@ -82,7 +82,7 @@ public class DiscordCommandHandler extends ListenerAdapter {
                     event.reply(message).setEphemeral(true).queue();
                     return;
                 }
-                if (!user.equals(event.getUser()) && !event.getMember().getPermissions().contains(Permission.ADMINISTRATOR)) {
+                if (!user.equals(event.getUser()) && !event.getMember().getPermissions().contains(Permission.MODERATE_MEMBERS)) {
                     event.reply("You do not have permission to use this command!").setEphemeral(true).queue();
                     return;
                 }

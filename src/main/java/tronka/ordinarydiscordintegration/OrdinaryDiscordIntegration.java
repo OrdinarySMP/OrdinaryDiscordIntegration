@@ -61,7 +61,6 @@ public class OrdinaryDiscordIntegration extends ListenerAdapter implements Dedic
     public void onReady(@NotNull ReadyEvent event) {
         TextChannel serverChatChannel = Utils.getTextChannel(jda, config.serverChatChannel);
         TextChannel consoleChannel = Utils.getTextChannel(jda, config.consoleChannel);
-
         if (serverChatChannel == null) {
             throw new RuntimeException("Please enter a valid serverChatChannelId");
         }
@@ -91,6 +90,10 @@ public class OrdinaryDiscordIntegration extends ListenerAdapter implements Dedic
 
     public boolean isReady() {
         return ready;
+    }
+
+    public JDA getJda() {
+        return jda;
     }
 
     public static OrdinaryDiscordIntegration getInstance() {
