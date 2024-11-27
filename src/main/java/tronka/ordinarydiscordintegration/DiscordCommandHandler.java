@@ -21,6 +21,7 @@ public class DiscordCommandHandler extends ListenerAdapter {
                         net.dv8tion.jda.api.interactions.commands.build.Commands.slash("linking", "Misc linking stuff")
                                 .addSubcommands(new SubcommandData("get", "Retrieve linking information")
                                                 .addOption(OptionType.USER, "user", "whose data to get"),
+//                                                .addOption(OptionType.STRING, "mc-name", "minecraft username to get data"),
                                         new SubcommandData("unlink", "Unlink your account")
                                                 .addOption(OptionType.USER, "user", "user to unlink")
                                 ),
@@ -42,7 +43,11 @@ public class DiscordCommandHandler extends ListenerAdapter {
                         .getPlayerList().stream()
                         .filter(player -> !integration.getVanishIntegration().isVanished(player))
                         .map(player -> player.getName().getLiteralString());
-                event.reply(String.join(", ", names.toList())).setEphemeral(true).queue();
+                String message = String.join(", ", names.toList());
+                if (message.isEmpty()) {
+                    message = "There are currently no players online";
+                }
+                event.reply(message).setEphemeral(true).queue();
             }
             case "linking" -> {
                 runLinkingCommand(event);
@@ -66,7 +71,7 @@ public class DiscordCommandHandler extends ListenerAdapter {
                     message = user.getAsMention() + " is linked to " + link.getPlayerName();
                     var alts = link.getAlts();
                     if (!alts.isEmpty()) {
-                        message += "\nWith " + alts.size() + " alts: " + String.join(", ", alts.stream().map(PlayerData::name).toList());
+                        message += "\nWith " + alts.size() + " alts: " + String.join(", ", alts.stream().map(PlayerData::getName).toList());
                     }
 
                 } else {

@@ -37,10 +37,15 @@ public class LinkManager extends ListenerAdapter {
     public Optional<Member> getDiscordOf(UUID playerId) {
         var link = linkData.getPlayerLink(playerId);
         if (link.isPresent()) {
-            var member = integration.getGuild().getMemberById(link.get().getDiscordId());
-            if (member != null) {
-                return Optional.of(member);
-            }
+           return getDiscordOf(link.get());
+        }
+        return Optional.empty();
+    }
+
+    public Optional<Member> getDiscordOf(PlayerLink link) {
+        var member = integration.getGuild().getMemberById(link.getDiscordId());
+        if (member != null) {
+            return Optional.of(member);
         }
         return Optional.empty();
     }
@@ -62,7 +67,12 @@ public class LinkManager extends ListenerAdapter {
     }
 
     public void onPlayerJoin(ServerPlayerEntity player) {
-        var memberOptional = getDiscordOf(player.getUuid());
+        var dataOptional = linkData.getPlayerLink(player.getUuid());
+        if (dataOptional.isEmpty()) {
+            return;
+        }
+        var data = dataOptional.get();
+        var memberOptional = getDiscordOf(data);
         if (memberOptional.isEmpty()) {
             return;
         }
@@ -70,8 +80,8 @@ public class LinkManager extends ListenerAdapter {
         if (!PermissionUtil.canInteract(integration.getGuild().getSelfMember(), member)) {
             return;
         }
-        var data = linkData.getPlayerLink(player.getUuid());
-        if (data.isPresent() && data.get().getPlayerId().equals(player.getUuid())
+
+        if (data.getPlayerId().equals(player.getUuid())
                 && integration.getConfig().joining.renameOnJoin
                 && PermissionUtil.checkPermission(integration.getGuild().getSelfMember(), Permission.NICKNAME_MANAGE)) {
             member.modifyNickname(player.getName().getString()).queue();

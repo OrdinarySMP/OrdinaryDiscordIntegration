@@ -7,7 +7,6 @@ import java.util.*;
 
 public class PlayerLink {
     private UUID playerId;
-    private String playerName;
     private long discordId;
     private List<PlayerData> alts;
     private transient LinkData dataObj;
@@ -17,18 +16,11 @@ public class PlayerLink {
     }
 
     public PlayerLink(LinkRequest request, long discordId) {
-        this(request.getPlayerId(), request.getName(), discordId);
+        this(request.getPlayerId(), discordId);
     }
 
-    public PlayerLink(UUID playerId, String playerName, long discordId) {
+    public PlayerLink(UUID playerId, long discordId) {
         this.playerId = playerId;
-        this.playerName = playerName;
-        if (playerName == null || playerName.isEmpty()) {
-            var player = OrdinaryDiscordIntegration.getInstance().getServer().getPlayerManager().getPlayer(playerId);
-            if (player != null) {
-                this.playerName = player.getName().getLiteralString();
-            }
-        }
         this.discordId = discordId;
         alts = new ArrayList<>();
     }
@@ -38,13 +30,11 @@ public class PlayerLink {
     }
 
     public String getPlayerName() {
-        return playerName;
-    }
-
-    public void setPlayerName(String name) {
-        if (playerName.equals(name)) { return; }
-        playerName = name;
-        dataObj.updatePlayerLink(this);
+        var player = OrdinaryDiscordIntegration.getInstance().getServer().getPlayerManager().getPlayer(playerId);
+        if (player != null) {
+            return player.getName().getLiteralString();
+        }
+        return "";
     }
 
     public long getDiscordId() {
@@ -57,7 +47,7 @@ public class PlayerLink {
     }
 
     public void removeAlt(UUID uuid) {
-        alts.removeIf(player -> player.id().equals(uuid));
+        alts.removeIf(data -> data.getId().equals(uuid));
         dataObj.updatePlayerLink(this);
     }
 
@@ -67,7 +57,7 @@ public class PlayerLink {
     }
 
     public boolean hasAlt(UUID uuid) {
-        return alts.stream().map(PlayerData::id).anyMatch(uuid::equals);
+        return alts.stream().map(PlayerData::getId).anyMatch(uuid::equals);
     }
 
     public int altCount() {
