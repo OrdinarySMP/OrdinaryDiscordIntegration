@@ -170,7 +170,18 @@ public class LinkManager extends ListenerAdapter {
     }
 
     public void unlinkPlayer(UUID uuid) {
-        linkData.getPlayerLink(uuid).ifPresent(linkData::removePlayerLink);
+        var dataOptional = linkData.getPlayerLink(uuid);
+        if (dataOptional.isEmpty()) { return; }
+        var data = dataOptional.get();
+        if (data.getPlayerId().equals(uuid)) {
+            linkData.removePlayerLink(data);
+        } else {
+            data.removeAlt(uuid);
+        }
+    }
+
+    public void unlinkPlayer(PlayerLink link) {
+        linkData.removePlayerLink(link);
     }
 
     @Override

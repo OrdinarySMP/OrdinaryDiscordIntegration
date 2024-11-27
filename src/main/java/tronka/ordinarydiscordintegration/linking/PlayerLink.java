@@ -1,7 +1,9 @@
 package tronka.ordinarydiscordintegration.linking;
 
 import com.google.common.collect.ImmutableList;
+import net.minecraft.util.Uuids;
 import tronka.ordinarydiscordintegration.OrdinaryDiscordIntegration;
+import tronka.ordinarydiscordintegration.Utils;
 
 import java.util.*;
 
@@ -30,11 +32,7 @@ public class PlayerLink {
     }
 
     public String getPlayerName() {
-        var player = OrdinaryDiscordIntegration.getInstance().getServer().getPlayerManager().getPlayer(playerId);
-        if (player != null) {
-            return player.getName().getLiteralString();
-        }
-        return "";
+        return Utils.getPlayerName(playerId);
     }
 
     public long getDiscordId() {

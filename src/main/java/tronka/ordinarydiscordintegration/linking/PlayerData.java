@@ -1,6 +1,7 @@
 package tronka.ordinarydiscordintegration.linking;
 
 import tronka.ordinarydiscordintegration.OrdinaryDiscordIntegration;
+import tronka.ordinarydiscordintegration.Utils;
 
 import java.util.UUID;
 
@@ -20,11 +21,7 @@ public class PlayerData {
     }
 
     public String getName() {
-        var player = OrdinaryDiscordIntegration.getInstance().getServer().getPlayerManager().getPlayer(id);
-        if (player != null) {
-            return player.getName().getLiteralString();
-        }
-        return "";
+        return Utils.getPlayerName(id);
     }
 
     public static PlayerData from(LinkRequest linkRequest) {
