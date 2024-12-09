@@ -12,9 +12,7 @@ import org.slf4j.Logger;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -53,7 +51,7 @@ public class Utils {
         return result.profile().getName();
     }
 
-    private static Gson gson = new Gson();
+    private static final Gson gson = new Gson();
 
     public static GameProfile fetchProfile(String name) {
         try {
@@ -71,5 +69,14 @@ public class Utils {
 
             return null;
         }
+    }
+
+    public static boolean startsWithAny(String string, List<String> starts) {
+        for (String s : starts) {
+            if (string.startsWith(s)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

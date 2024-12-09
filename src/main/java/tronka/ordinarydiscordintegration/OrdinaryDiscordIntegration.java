@@ -60,7 +60,7 @@ public class OrdinaryDiscordIntegration extends ListenerAdapter implements Dedic
     @Override
     public void onReady(@NotNull ReadyEvent event) {
         TextChannel serverChatChannel = Utils.getTextChannel(jda, config.serverChatChannel);
-        TextChannel consoleChannel = Utils.getTextChannel(jda, config.consoleChannel);
+        TextChannel consoleChannel = Utils.getTextChannel(jda, config.commands.consoleChannel);
         if (serverChatChannel == null) {
             throw new RuntimeException("Please enter a valid serverChatChannelId");
         }

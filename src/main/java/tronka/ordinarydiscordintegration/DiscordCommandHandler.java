@@ -1,9 +1,6 @@
 package tronka.ordinarydiscordintegration;
 
 import com.mojang.authlib.GameProfile;
-import com.mojang.authlib.ProfileLookupCallback;
-import com.mojang.authlib.exceptions.AuthenticationUnavailableException;
-import com.mojang.logging.LogUtils;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
@@ -14,7 +11,6 @@ import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import net.dv8tion.jda.internal.utils.PermissionUtil;
-import net.minecraft.server.network.ServerPlayerEntity;
 import tronka.ordinarydiscordintegration.linking.PlayerData;
 
 import java.util.Objects;
@@ -61,9 +57,7 @@ public class DiscordCommandHandler extends ListenerAdapter {
                 }
                 event.reply(message).setEphemeral(true).queue();
             }
-            case "linking" -> {
-                linkingCommand(event);
-            }
+            case "linking" -> linkingCommand(event);
         }
     }
 

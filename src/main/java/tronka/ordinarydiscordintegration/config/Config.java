@@ -10,11 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Config {
-
     public String botToken = "";
     public String serverChatChannel = "";
-    public String consoleChannel = "";
-    public boolean showCommandsInConsole = true;
     public boolean useWebHooks = true;
 
     public String avatarUrl = "https://minotar.net/avatar/%UUID%?randomuuid=%randomUUID%";
@@ -79,10 +76,39 @@ public class Config {
         public static class LuckPermsIntegration {
             public List<String> altGroups = new ArrayList<>();
         }
-
     }
 
-    public static Config loadConfig(){
+    public CommandSettings commands = new CommandSettings();
+
+    public static class CommandSettings {
+        public String consoleChannel = "";
+        public boolean showCommandsInConsole = true;
+        public List<String> ignoredCommands = new ArrayList<>();
+        public String commandPrefix = "//";
+        public String opRole = "";
+
+        public List<BridgeCommand> commands = List.of(new BridgeCommand[] {
+                BridgeCommand.of("kick", "kick %args%"),
+                BridgeCommand.of("stop", "stop"),
+                BridgeCommand.of("kill", "kill %args%"),
+                BridgeCommand.of("ban", "ban %args%")
+        });
+    }
+
+
+
+    public static class BridgeCommand {
+        public String commandName = "";
+        public String inGameAction = "";
+        public static BridgeCommand of(String name, String action) {
+            var obj = new BridgeCommand();
+            obj.commandName = name;
+            obj.inGameAction = action;
+            return obj;
+        }
+    }
+
+    public static Config loadConfig() {
         var configDir = FabricLoader.getInstance().getConfigDir();
         var configFile = configDir.resolve(OrdinaryDiscordIntegration.ModId + ".toml").toFile();
         if (configFile.exists()){
