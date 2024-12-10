@@ -29,7 +29,7 @@ public class OrdinaryDiscordIntegration extends ListenerAdapter implements Dedic
     private ConsoleBridge consoleBridge;
     private ChatBridge chatBridge;
     private static OrdinaryDiscordIntegration instance;
-    private final Config config = Config.loadConfig();
+    private Config config = Config.loadConfig();
     private LinkManager linkManager;
     private LuckPermsIntegration luckPermsIntegration;
     private VanishIntegration vanishIntegration;
@@ -129,5 +129,9 @@ public class OrdinaryDiscordIntegration extends ListenerAdapter implements Dedic
 
     public VanishIntegration getVanishIntegration() {
         return vanishIntegration;
+    }
+
+    public void reloadConfig() {
+        config = Config.loadConfig();
     }
 }

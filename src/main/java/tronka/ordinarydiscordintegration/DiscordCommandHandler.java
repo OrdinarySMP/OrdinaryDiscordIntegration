@@ -33,7 +33,8 @@ public class DiscordCommandHandler extends ListenerAdapter {
                                                 .addOption(OptionType.USER, "user", "user to unlink")
                                                 .addOption(OptionType.STRING, "mc-name", "minecraft account to unlink")
                                         ),
-                        Commands.slash("list", "List the currently online players")
+                        Commands.slash("list", "List the currently online players"),
+                        Commands.slash("reload", "Reload the config file")
                 ).queue();
     }
 
@@ -58,6 +59,7 @@ public class DiscordCommandHandler extends ListenerAdapter {
                 event.reply(message).setEphemeral(true).queue();
             }
             case "linking" -> linkingCommand(event);
+            case "reload" -> integration.reloadConfig();
         }
     }
 
