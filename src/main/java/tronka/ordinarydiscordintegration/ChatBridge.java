@@ -57,12 +57,12 @@ public class ChatBridge extends ListenerAdapter {
         if (event.getChannel() != channel) {
             return;
         }
-        if (event.getAuthor().isBot()) {
+        if (event.getMember() == null || event.getAuthor().isBot()) {
             return;
         }
         var message = Text.of(
                 integration.getConfig().messages.chatMessageFormat
-                        .replace("%user%", event.getAuthor().getName())
+                        .replace("%user%", event.getMember().getEffectiveName())
                         .replace("%msg%", event.getMessage().getContentDisplay())
         );
         sendMcChatMessage(message);

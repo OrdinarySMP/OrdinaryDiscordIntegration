@@ -8,7 +8,7 @@ import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.internal.utils.PermissionUtil;
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.command.ServerCommandSource;
 
 public class ConsoleBridge extends ListenerAdapter {
     private final OrdinaryDiscordIntegration integration;
@@ -25,19 +25,24 @@ public class ConsoleBridge extends ListenerAdapter {
         }
     }
 
-    public void onCommandExecute(String command, ServerPlayerEntity player) {
+    public void onCommandExecute(ServerCommandSource source, String command){
         if (channel == null) {
             return;
         }
-        if (!integration.getConfig().commands.showCommandsInConsole) {
+        if (!integration.getConfig().commands.logCommandsInConsole) {
             return;
         }
+
+        if (source.getEntity() == null && !source.getName().equals("Server") && !integration.getConfig().commands.logCommandBlockCommands) {
+            return;
+        }
+
         if (Utils.startsWithAny(command, integration.getConfig().commands.ignoredCommands)) {
             return;
         }
         channel.sendMessage(
                 integration.getConfig().messages.commandExecutedInfoText
-                        .replace("%user%", player.getName().getString())
+                        .replace("%user%", source.getName())
                         .replace("%msg%", command)
         ).queue();
     }

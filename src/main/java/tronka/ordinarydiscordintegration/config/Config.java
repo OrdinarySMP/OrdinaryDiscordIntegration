@@ -82,7 +82,8 @@ public class Config {
 
     public static class CommandSettings {
         public String consoleChannel = "";
-        public boolean showCommandsInConsole = true;
+        public boolean logCommandsInConsole = true;
+        public boolean logCommandBlockCommands = false;
         public List<String> ignoredCommands = new ArrayList<>();
         public String commandPrefix = "//";
         public String opRole = "";
@@ -94,8 +95,6 @@ public class Config {
                 BridgeCommand.of("ban", "ban %args%")
         });
     }
-
-
 
     public static class BridgeCommand {
         public String commandName = "";

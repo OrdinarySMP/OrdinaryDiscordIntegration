@@ -8,7 +8,7 @@
     "AdvancementMixin",
     "NetworkHandlerMixin",
     "ServerPlayerEntityMixin",
-    "ServerPlayNetworkHandlerMixin"
+    "CommandManagerMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -26,7 +26,6 @@ public class OrdinaryDiscordIntegration extends ListenerAdapter implements Dedic
     private Guild guild;
     private MinecraftServer server;
     private boolean ready = false;
-    private DiscordCommandHandler commandHandler;
     private ConsoleBridge consoleBridge;
     private ChatBridge chatBridge;
     private static OrdinaryDiscordIntegration instance;
@@ -44,6 +43,7 @@ public class OrdinaryDiscordIntegration extends ListenerAdapter implements Dedic
         ServerLifecycleEvents.SERVER_STARTING.register(s -> server = s);
         ServerLifecycleEvents.SERVER_STOPPED.register(this::onServerStopped);
         Thread jdaThread = new Thread(this::startJDA);
+        new InGameUnlinkCommand(this);
         jdaThread.start();
     }
 
@@ -67,11 +67,10 @@ public class OrdinaryDiscordIntegration extends ListenerAdapter implements Dedic
 
         guild = serverChatChannel.getGuild();
 
-        jda.addEventListener(commandHandler = new DiscordCommandHandler(this));
+        jda.addEventListener(new DiscordCommandHandler(this));
         jda.addEventListener(chatBridge = new ChatBridge(this, serverChatChannel));
         jda.addEventListener(consoleBridge = new ConsoleBridge(this, consoleChannel));
         jda.addEventListener(linkManager = new LinkManager(this));
-        var inGameCommand = new InGameUnlinkCommand(this);
         luckPermsIntegration = new LuckPermsIntegration(this);
         vanishIntegration = new VanishIntegration(this);
 
@@ -110,10 +109,6 @@ public class OrdinaryDiscordIntegration extends ListenerAdapter implements Dedic
 
     public Guild getGuild() {
         return guild;
-    }
-
-    public DiscordCommandHandler getCommandHandler() {
-        return commandHandler;
     }
 
     public ConsoleBridge getConsoleBridge() {

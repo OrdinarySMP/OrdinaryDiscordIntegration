@@ -83,7 +83,7 @@ public class DiscordCommandHandler extends ListenerAdapter {
             target = event.getMember();
         }
         var isSelf = event.getMember().equals(target);
-        if (!isSelf && PermissionUtil.checkPermission(event.getMember(), Permission.MODERATE_MEMBERS)) {
+        if (!isSelf && !PermissionUtil.checkPermission(event.getMember(), Permission.MODERATE_MEMBERS)) {
             event.reply("Insufficient permissions").setEphemeral(true).queue();
             return;
         }
