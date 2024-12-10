@@ -59,7 +59,14 @@ public class DiscordCommandHandler extends ListenerAdapter {
                 event.reply(message).setEphemeral(true).queue();
             }
             case "linking" -> linkingCommand(event);
-            case "reload" -> integration.reloadConfig();
+            case "reload" -> {
+                if (!PermissionUtil.checkPermission(event.getMember(), Permission.ADMINISTRATOR)) {
+                    event.reply("Insufficient permissions").setEphemeral(true).queue();
+                    return;
+                }
+                integration.reloadConfig();
+                event.reply("Reloaded config!").setEphemeral(true).queue();
+            }
         }
     }
 
