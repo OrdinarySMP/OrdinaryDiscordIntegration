@@ -4,15 +4,13 @@
   "package": "tronka.ordinarydiscordintegration.mixin",
   "compatibilityLevel": "JAVA_21",
   "server": [
-    "PlayerManagerMixin"
-  ],
-  "injectors": {
-    "defaultRequire": 1
-  },
-  "mixins": [
+    "PlayerManagerMixin",
     "AdvancementMixin",
     "NetworkHandlerMixin",
     "ServerPlayerEntityMixin",
     "ServerPlayNetworkHandlerMixin"
-  ]
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
 }
