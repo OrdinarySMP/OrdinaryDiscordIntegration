@@ -96,7 +96,14 @@ public class ChatBridge extends ListenerAdapter {
         long playerCount = integration.getServer().getPlayerManager().getPlayerList().stream()
                 .filter(p -> !integration.getVanishIntegration().isVanished(p)).count() + modifier;
         integration.getJda().getPresence().setPresence(
-                Activity.playing(integration.getConfig().messages.onlineCount.formatted(playerCount)), false);
+                Activity.playing(playerCount > 1
+                        ? integration.getConfig().messages.onlineCountPlural
+                            .replace("%playercount%", Long.toString(playerCount))
+                        : playerCount == 1
+                        ? integration.getConfig().messages.onlineCountSingular
+                        : integration.getConfig().messages.onlineCountPlural
+                            .replace("%playercount%", integration.getConfig().messages.onlineCountZeroString)),
+                false);
 
     }
 

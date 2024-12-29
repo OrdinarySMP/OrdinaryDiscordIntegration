@@ -57,7 +57,9 @@ public class Config {
         public String advancementMessage = "%user% just made the advancement **%title%**\n*%description%*";
         public String startMessage = "Server started";
         public String stopMessage = "Server stopped";
-        public String onlineCount = "%d players online";
+        public String onlineCountPlural = "%playercount% players online";
+        public String onlineCountSingular = "1 player online";
+        public String onlineCountZeroString = "No";
     }
 
     public DiscordLinkResults linkResults = new DiscordLinkResults();
