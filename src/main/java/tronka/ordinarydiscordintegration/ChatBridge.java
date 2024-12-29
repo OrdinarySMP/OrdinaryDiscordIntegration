@@ -96,8 +96,12 @@ public class ChatBridge extends ListenerAdapter {
         long playerCount = integration.getServer().getPlayerManager().getPlayerList().stream()
                 .filter(p -> !integration.getVanishIntegration().isVanished(p)).count() + modifier;
         integration.getJda().getPresence().setPresence(
-                Activity.playing(integration.getConfig().messages.onlineCount.formatted(playerCount)), false);
-
+                Activity.playing(switch ((int) playerCount) {
+                    case 0 -> integration.getConfig().messages.onlineCountZero;
+                    case 1 -> integration.getConfig().messages.onlineCountSingular;
+                    default -> integration.getConfig().messages.onlineCountPlural.formatted(playerCount);
+                }),
+                false);
     }
 
     public void onPlayerDeath(ServerPlayerEntity player, DamageSource source) {
