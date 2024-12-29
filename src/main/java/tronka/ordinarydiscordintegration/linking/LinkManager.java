@@ -35,7 +35,7 @@ public class LinkManager extends ListenerAdapter {
     }
 
     public Optional<Member> getDiscordOf(UUID playerId) {
-        var link = linkData.getPlayerLink(playerId);
+        Optional<PlayerLink> link = linkData.getPlayerLink(playerId);
         if (link.isPresent()) {
            return getDiscordOf(link.get());
         }
@@ -43,7 +43,7 @@ public class LinkManager extends ListenerAdapter {
     }
 
     public Optional<Member> getDiscordOf(PlayerLink link) {
-        var member = integration.getGuild().getMemberById(link.getDiscordId());
+        Member member = integration.getGuild().getMemberById(link.getDiscordId());
         if (member != null) {
             return Optional.of(member);
         }
@@ -60,23 +60,23 @@ public class LinkManager extends ListenerAdapter {
 
     public boolean canJoin(UUID playerId) {
         if (!integration.getConfig().joining.enableLinking) {return true;}
-        var member = getDiscordOf(playerId);
+        Optional<Member> member = getDiscordOf(playerId);
         if (member.isEmpty()) {return false;}
         if (integration.getConfig().joining.disallowTimeoutMembersToJoin && member.get().isTimedOut()) {return false;}
         return Set.copyOf(member.get().getRoles()).containsAll(requiredRoles);
     }
 
     public void onPlayerJoin(ServerPlayerEntity player) {
-        var dataOptional = linkData.getPlayerLink(player.getUuid());
+        Optional<PlayerLink> dataOptional = linkData.getPlayerLink(player.getUuid());
         if (dataOptional.isEmpty()) {
             return;
         }
-        var data = dataOptional.get();
-        var memberOptional = getDiscordOf(data);
+        PlayerLink data = dataOptional.get();
+        Optional<Member> memberOptional = getDiscordOf(data);
         if (memberOptional.isEmpty()) {
             return;
         }
-        var member = memberOptional.get();
+        Member member = memberOptional.get();
         if (!PermissionUtil.canInteract(integration.getGuild().getSelfMember(), member)) {
             return;
         }
@@ -92,20 +92,20 @@ public class LinkManager extends ListenerAdapter {
     }
 
     public String getJoinError(GameProfile profile) {
-        var member = getDiscordOf(profile.getId());
+        Optional<Member> member = getDiscordOf(profile.getId());
         if (member.isEmpty()) {
-            var code = generateLinkCode(profile);
+            String code = generateLinkCode(profile);
             return integration.getConfig().kickMessages.kickLinkCode.formatted(code);
         }
         return integration.getConfig().kickMessages.kickMissingRoles;
     }
 
     public String confirmLink(long discordId, String code) {
-        var linkRequest = getPlayerLinkFromCode(code);
+        Optional<LinkRequest> linkRequest = getPlayerLinkFromCode(code);
         if (linkRequest.isEmpty()) { return integration.getConfig().linkResults.failedUnknownCode; }
-        var existing = linkData.getPlayerLink(discordId);
+        Optional<PlayerLink> existing = linkData.getPlayerLink(discordId);
         if (existing.isPresent()) {
-            var link = existing.get();
+            PlayerLink link = existing.get();
             if (link.altCount() >= integration.getConfig().maxAlts) {
                 return integration.getConfig().linkResults.failedTooManyLinked;
             }
@@ -122,7 +122,7 @@ public class LinkManager extends ListenerAdapter {
         if (!linkRequests.containsKey(code)) {
             return Optional.empty();
         }
-        var request = linkRequests.remove(code);
+        LinkRequest request = linkRequests.remove(code);
         if (request.isExpired()) {
             return Optional.empty();
         }
@@ -152,7 +152,7 @@ public class LinkManager extends ListenerAdapter {
         if (!integration.getConfig().unlinkOnLeave) {
             return;
         }
-        var memberSet = members.stream().map(Member::getIdLong).collect(Collectors.toSet());
+        Set<Long> memberSet = members.stream().map(Member::getIdLong).collect(Collectors.toSet());
         final int[] purgedCount = {0};
         linkData.getPlayerLinks().forEach(link -> {
             if (!memberSet.contains(link.getDiscordId())) {
@@ -170,9 +170,9 @@ public class LinkManager extends ListenerAdapter {
     }
 
     public void unlinkPlayer(UUID uuid) {
-        var dataOptional = linkData.getPlayerLink(uuid);
+        Optional<PlayerLink> dataOptional = linkData.getPlayerLink(uuid);
         if (dataOptional.isEmpty()) { return; }
-        var data = dataOptional.get();
+        PlayerLink data = dataOptional.get();
         if (data.getPlayerId().equals(uuid)) {
             linkData.removePlayerLink(data);
         } else {
@@ -186,7 +186,7 @@ public class LinkManager extends ListenerAdapter {
 
     @Override
     public void onGuildMemberRemove(GuildMemberRemoveEvent event) {
-        var member = event.getMember();
+        Member member = event.getMember();
         if (member != null) {
             unlinkPlayer(member.getIdLong());
             LOGGER.info("Removed link of \"{}\" because they left the guild.", member.getEffectiveName());

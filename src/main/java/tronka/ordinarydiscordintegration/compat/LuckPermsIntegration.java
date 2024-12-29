@@ -31,7 +31,7 @@ public class LuckPermsIntegration {
     public void setAlt(UUID uuid) {
         if (!loaded) { return; }
         luckPerms.getUserManager().loadUser(uuid).thenAccept(user -> {
-            for (var group : integration.getConfig().integrations.luckPerms.altGroups) {
+            for (String group : integration.getConfig().integrations.luckPerms.altGroups) {
                 user.data().add(LuckPermsHelper.getNode(group));
             }
             luckPerms.getUserManager().saveUser(user);
