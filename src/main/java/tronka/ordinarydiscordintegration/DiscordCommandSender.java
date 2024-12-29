@@ -21,7 +21,7 @@ public class DiscordCommandSender extends ServerCommandSource {
 
     @Override
     public void sendFeedback(Supplier<Text> feedbackSupplier, boolean broadcastToOps) {
-        var message = feedbackSupplier.get().getString();
+        String message = feedbackSupplier.get().getString();
         feedbackConsumer.accept(message);
     }
 

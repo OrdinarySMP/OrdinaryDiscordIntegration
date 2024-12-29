@@ -12,8 +12,11 @@ import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import net.dv8tion.jda.internal.utils.PermissionUtil;
 import tronka.ordinarydiscordintegration.linking.PlayerData;
+import tronka.ordinarydiscordintegration.linking.PlayerLink;
 
 import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Stream;
 
 
 public class DiscordCommandHandler extends ListenerAdapter {
@@ -43,12 +46,12 @@ public class DiscordCommandHandler extends ListenerAdapter {
         if (event.getMember() == null || event.getMember().getGuild() != integration.getGuild()) { return; }
         switch (event.getName()) {
             case "link" -> {
-                var code = event.getOptions().getFirst().getAsString();
-                var message = integration.getLinkManager().confirmLink(event.getUser().getIdLong(), code);
+                String code = event.getOptions().getFirst().getAsString();
+                String message = integration.getLinkManager().confirmLink(event.getUser().getIdLong(), code);
                 event.reply(message).setEphemeral(true).queue();
             }
             case "list" -> {
-                var names = integration.getServer().getPlayerManager()
+                Stream<String> names = integration.getServer().getPlayerManager()
                         .getPlayerList().stream()
                         .filter(player -> !integration.getVanishIntegration().isVanished(player))
                         .map(player -> player.getName().getLiteralString());
@@ -75,13 +78,13 @@ public class DiscordCommandHandler extends ListenerAdapter {
             event.reply("Invalid Context").setEphemeral(true).queue();
             return;
         }
-        var target = event.getOption("user", OptionMapping::getAsMember);
-        var minecraftName = event.getOption("mc-name", OptionMapping::getAsString);
+        Member target = event.getOption("user", OptionMapping::getAsMember);
+        String minecraftName = event.getOption("mc-name", OptionMapping::getAsString);
 
         if (minecraftName != null) {
             if (PermissionUtil.checkPermission(event.getMember(), Permission.MODERATE_MEMBERS)) {
                 event.deferReply().setEphemeral(true).queue();
-                var profile = Utils.fetchProfile(minecraftName);
+                GameProfile profile = Utils.fetchProfile(minecraftName);
                 linkingWithPlayer(event.getSubcommandName(), event.getHook(), profile);
                 return;
             } else {
@@ -91,7 +94,7 @@ public class DiscordCommandHandler extends ListenerAdapter {
         } else if (target == null) {
             target = event.getMember();
         }
-        var isSelf = event.getMember().equals(target);
+        boolean isSelf = event.getMember().equals(target);
         if (!isSelf && !PermissionUtil.checkPermission(event.getMember(), Permission.MODERATE_MEMBERS)) {
             event.reply("Insufficient permissions").setEphemeral(true).queue();
             return;
@@ -101,15 +104,15 @@ public class DiscordCommandHandler extends ListenerAdapter {
 
     // run with checked permissions
     private void linkingWithMember(SlashCommandInteractionEvent event, Member target) {
-        var dataOptional = integration.getLinkManager().getDataOf(target.getIdLong());
+        Optional<PlayerLink> dataOptional = integration.getLinkManager().getDataOf(target.getIdLong());
         if (dataOptional.isEmpty()) {
             event.reply(target.getAsMention() + " is not linked to any player").setEphemeral(true).queue();
             return;
         }
-        var data = dataOptional.get();
+        PlayerLink data = dataOptional.get();
         if (Objects.equals(event.getSubcommandName(), "get")) {
             event.deferReply().setEphemeral(true).queue();
-            var text = target.getAsMention() + " is linked to " + data.getPlayerName();
+            String text = target.getAsMention() + " is linked to " + data.getPlayerName();
             if (data.altCount() != 0) {
                 text += "\nwith " + data.altCount() + " alts: " + String.join(", ", data.getAlts().stream().map(PlayerData::getName).toList());
             }
@@ -126,13 +129,13 @@ public class DiscordCommandHandler extends ListenerAdapter {
             hook.editOriginal("Could not find a player with that name").queue();
             return;
         }
-        var data = integration.getLinkManager().getDataOf(profile.getId());
+        Optional<PlayerLink> data = integration.getLinkManager().getDataOf(profile.getId());
         if (data.isEmpty()) {
             hook.editOriginal("Could not find a linked account").queue();
             return;
         }
         if (Objects.equals(subCommand, "get")) {
-            var member = integration.getLinkManager().getDiscordOf(data.get());
+            Optional<Member> member = integration.getLinkManager().getDiscordOf(data.get());
             if (member.isPresent()) {
                 hook.editOriginal(profile.getName() + " is linked to " + member.get().getAsMention()).queue();
             } else {

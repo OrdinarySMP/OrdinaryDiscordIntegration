@@ -1,6 +1,7 @@
 package tronka.ordinarydiscordintegration;
 
 import club.minnced.discord.webhook.external.JDAWebhookClient;
+import club.minnced.discord.webhook.send.WebhookMessage;
 import club.minnced.discord.webhook.send.WebhookMessageBuilder;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.Webhook;
@@ -18,6 +19,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 public class ChatBridge extends ListenerAdapter {
@@ -39,7 +41,7 @@ public class ChatBridge extends ListenerAdapter {
         // get webhook
         if (integration.getConfig() .useWebHooks) {
             channel.retrieveWebhooks().onSuccess((webhooks -> {
-                var hook = webhooks.stream().filter(w -> w.getOwner() == this.integration.getGuild().getSelfMember()).findFirst();
+                Optional<Webhook> hook = webhooks.stream().filter(w -> w.getOwner() == this.integration.getGuild().getSelfMember()).findFirst();
                 if (hook.isPresent()) {
                     webhook = hook.get();
                 } else {
@@ -60,7 +62,7 @@ public class ChatBridge extends ListenerAdapter {
         if (event.getMember() == null || event.getAuthor().isBot()) {
             return;
         }
-        var message = Text.of(
+        Text message = Text.of(
                 integration.getConfig().messages.chatMessageFormat
                         .replace("%user%", event.getMember().getEffectiveName())
                         .replace("%msg%", event.getMessage().getContentDisplay())
@@ -91,7 +93,7 @@ public class ChatBridge extends ListenerAdapter {
         if (!integration.getConfig().showPlayerCountStatus) {
             return;
         }
-        var playerCount = integration.getServer().getPlayerManager().getPlayerList().stream()
+        long playerCount = integration.getServer().getPlayerManager().getPlayerList().stream()
                 .filter(p -> !integration.getVanishIntegration().isVanished(p)).count() + modifier;
         integration.getJda().getPresence().setPresence(
                 Activity.playing(integration.getConfig().messages.onlineCount.formatted(playerCount)), false);
@@ -118,7 +120,7 @@ public class ChatBridge extends ListenerAdapter {
     }
 
     public void sendMcChatMessage(Text message) {
-        for (var player : integration.getServer().getPlayerManager().getPlayerList()) {
+        for (ServerPlayerEntity player : integration.getServer().getPlayerManager().getPlayerList()) {
             player.sendMessage(message);
         }
     }
@@ -130,13 +132,13 @@ public class ChatBridge extends ListenerAdapter {
 
 
     private void onMcChatMessage(SignedMessage signedMessage, ServerPlayerEntity player, MessageType.Parameters parameters) {
-        var message = signedMessage.getContent().getLiteralString();
+        String message = signedMessage.getContent().getLiteralString();
         if (integration.getConfig().stackMessages && lastMessageSender == player && Objects.equals(message, lastMessage)) {
             repeatedCount++;
             return;
         } else if(repeatedCount > 0) {
-            var displayCounter = repeatedCount > 1 ? " (" + repeatedCount + ")" : "";
-            var updatedLastMessage = lastMessage + displayCounter;
+            String displayCounter = repeatedCount > 1 ? " (" + repeatedCount + ")" : "";
+            String updatedLastMessage = lastMessage + displayCounter;
             sendDiscordMessage(updatedLastMessage, lastMessageSender);
         }
 
@@ -151,7 +153,7 @@ public class ChatBridge extends ListenerAdapter {
         if (webhook != null) {
             sendAsWebhook(message, sender);
         } else {
-            var formattedMessage = sender.getName() + ": " + message;
+            String formattedMessage = sender.getName() + ": " + message;
             channel.sendMessage(formattedMessage).queue();
         }
     }
@@ -163,9 +165,9 @@ public class ChatBridge extends ListenerAdapter {
     }
 
     private void sendAsWebhook(String message, ServerPlayerEntity player) {
-        try(var client = JDAWebhookClient.from(webhook)) {
-            var avatarUrl = getAvatarUrl(player);
-            var msg = new WebhookMessageBuilder()
+        try(JDAWebhookClient client = JDAWebhookClient.from(webhook)) {
+            String avatarUrl = getAvatarUrl(player);
+            WebhookMessage msg = new WebhookMessageBuilder()
                     .setUsername(player.getName().getLiteralString())
                     .setAvatarUrl(avatarUrl)
                     .setContent(message)

@@ -20,7 +20,7 @@ public class PlayerManagerMixin {
 
     @Inject(method = "checkCanJoin", at = @At("HEAD"), cancellable = true)
     private void canJoin(SocketAddress address, GameProfile profile, CallbackInfoReturnable<Text> cir) {
-        var integration = OrdinaryDiscordIntegration.getInstance();
+        OrdinaryDiscordIntegration integration = OrdinaryDiscordIntegration.getInstance();
         if (integration.getLinkManager().canJoin(profile.getId())) { return; }
 
         if (!integration.isReady()) {

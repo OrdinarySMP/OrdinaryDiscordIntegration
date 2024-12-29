@@ -5,7 +5,9 @@ import com.moandjiezana.toml.TomlWriter;
 import net.fabricmc.loader.api.FabricLoader;
 import tronka.ordinarydiscordintegration.OrdinaryDiscordIntegration;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -100,7 +102,7 @@ public class Config {
         public String commandName = "";
         public String inGameAction = "";
         public static BridgeCommand of(String name, String action) {
-            var obj = new BridgeCommand();
+            BridgeCommand obj = new BridgeCommand();
             obj.commandName = name;
             obj.inGameAction = action;
             return obj;
@@ -108,12 +110,12 @@ public class Config {
     }
 
     public static Config loadConfig() {
-        var configDir = FabricLoader.getInstance().getConfigDir();
-        var configFile = configDir.resolve(OrdinaryDiscordIntegration.ModId + ".toml").toFile();
+        Path configDir = FabricLoader.getInstance().getConfigDir();
+        File configFile = configDir.resolve(OrdinaryDiscordIntegration.ModId + ".toml").toFile();
         if (configFile.exists()){
             return new Toml().read(configFile).to(Config.class);
         } else {
-            var config = new Config();
+            Config config = new Config();
             try {
                 new TomlWriter().write(config, configFile);
             } catch (IOException ignored) { }

@@ -2,6 +2,7 @@ package tronka.ordinarydiscordintegration;
 
 import com.google.gson.Gson;
 import com.mojang.authlib.GameProfile;
+import com.mojang.authlib.yggdrasil.ProfileResult;
 import com.mojang.logging.LogUtils;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
@@ -13,20 +14,23 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class Utils {
     private static final Logger LOGGER = LogUtils.getLogger();
     public static List<Role> parseRoleList(Guild guild, List<String> roleIds) {
-        var roles = new ArrayList<Role>();
+        ArrayList<Role> roles = new ArrayList<Role>();
         if (roleIds == null) { return roles; }
-        for (var roleId : roleIds) {
-            var role = guild.getRoleById(roleId);
+        for (String roleId : roleIds) {
+            Role role = guild.getRoleById(roleId);
             if (role == null) {
-                var namedRole = guild.getRoles().stream().filter(r -> r.getName().equals(roleId)).findFirst();
+                Optional<Role> namedRole = guild.getRoles().stream().filter(r -> r.getName().equals(roleId)).findFirst();
                 if (namedRole.isEmpty()) {
                     LOGGER.warn("Could not find role with id \"{}\"", roleId);
                     continue;
@@ -44,7 +48,7 @@ public class Utils {
     }
 
     public static String getPlayerName(UUID uuid) {
-        var result = OrdinaryDiscordIntegration.getInstance().getServer().getSessionService().fetchProfile(uuid, false);
+        ProfileResult result = OrdinaryDiscordIntegration.getInstance().getServer().getSessionService().fetchProfile(uuid, false);
         if (result == null) {
             return "unknown";
         }
@@ -55,15 +59,15 @@ public class Utils {
 
     public static GameProfile fetchProfile(String name) {
         try {
-            var url = URI.create("https://api.mojang.com/users/profiles/minecraft/" + name).toURL();
-            var connection = url.openConnection();
+            URL url = URI.create("https://api.mojang.com/users/profiles/minecraft/" + name).toURL();
+            URLConnection connection = url.openConnection();
             connection.addRequestProperty("User-Agent", "OrdinaryDiscordIntegration");
             connection.addRequestProperty("Accept", "application/json");
             connection.connect();
-            var reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-            var data = reader.lines().collect(Collectors.joining());
+            BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+            String data = reader.lines().collect(Collectors.joining());
             // fix uuid format
-            var fixed = data.replaceFirst("\"(\\p{XDigit}{8})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}+)\"", "$1-$2-$3-$4-$5");
+            String fixed = data.replaceFirst("\"(\\p{XDigit}{8})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}+)\"", "$1-$2-$3-$4-$5");
             return gson.fromJson(fixed, GameProfile.class);
         } catch (IOException e) {
 
