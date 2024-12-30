@@ -91,13 +91,25 @@ public class Config {
         public List<String> ignoredCommands = new ArrayList<>();
         public String commandPrefix = "//";
         public String opRole = "";
+        public List<LogRedirectChannel> logRedirectChannels = List.of(LogRedirectChannel.of("", List.of("w", "msg", "tell")));
 
-        public List<BridgeCommand> commands = List.of(new BridgeCommand[] {
-                BridgeCommand.of("kick", "kick %args%"),
-                BridgeCommand.of("stop", "stop"),
-                BridgeCommand.of("kill", "kill %args%"),
-                BridgeCommand.of("ban", "ban %args%")
-        });
+        public List<BridgeCommand> commands = List.of(
+            BridgeCommand.of("kick", "kick %args%"),
+            BridgeCommand.of("stop", "stop"),
+            BridgeCommand.of("kill", "kill %args%"),
+            BridgeCommand.of("ban", "ban %args%")
+        );
+    }
+
+    public static class LogRedirectChannel {
+        public String channel;
+        public List<String> redirectPrefixes = new ArrayList<>();
+        public static LogRedirectChannel of(String channel, List<String> prefixes) {
+            LogRedirectChannel obj = new LogRedirectChannel();
+            obj.channel = channel;
+            obj.redirectPrefixes = prefixes;
+            return obj;
+        }
     }
 
     public static class BridgeCommand {

@@ -1,6 +1,7 @@
 package tronka.ordinarydiscordintegration;
 
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.logging.LogUtils;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Role;
@@ -11,12 +12,15 @@ import net.dv8tion.jda.internal.utils.PermissionUtil;
 import net.minecraft.server.command.ServerCommandSource;
 import tronka.ordinarydiscordintegration.config.Config;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 public class ConsoleBridge extends ListenerAdapter {
     private final OrdinaryDiscordIntegration integration;
     private final TextChannel channel;
     private final Role opRole;
+    private final List<LogRedirect> logRedirects;
     public ConsoleBridge(OrdinaryDiscordIntegration integration, TextChannel consoleChannel) {
         this.integration = integration;
         this.channel = consoleChannel;
@@ -25,6 +29,15 @@ public class ConsoleBridge extends ListenerAdapter {
             opRole = channel.getGuild().getRoleById(opRoleId);
         } else {
             opRole = null;
+        }
+        logRedirects = new ArrayList<>();
+        for (Config.LogRedirectChannel logRedirectChannel : integration.getConfig().commands.logRedirectChannels) {
+            TextChannel channel = Utils.getTextChannel(integration.getJda(), logRedirectChannel.channel);
+            if (channel != null) {
+                logRedirects.add(new LogRedirect(channel, logRedirectChannel.redirectPrefixes));
+            } else {
+                LogUtils.getLogger().info("Could not load log redirect: ID: \"{}\", redirects: [{}]", logRedirectChannel.channel, String.join(", ", logRedirectChannel.redirectPrefixes));
+            }
         }
     }
 
@@ -43,7 +56,14 @@ public class ConsoleBridge extends ListenerAdapter {
         if (Utils.startsWithAny(command, integration.getConfig().commands.ignoredCommands)) {
             return;
         }
-        channel.sendMessage(
+        TextChannel target = channel;
+        for (LogRedirect redirect : logRedirects) {
+            if (Utils.startsWithAny(command, redirect.prefixes)) {
+                target = redirect.channel;
+                break;
+            }
+        }
+        target.sendMessage(
                 integration.getConfig().messages.commandExecutedInfoText
                         .replace("%user%", source.getName())
                         .replace("%msg%", command)
@@ -93,5 +113,9 @@ public class ConsoleBridge extends ListenerAdapter {
         } else {
             event.getChannel().sendMessage("Unknown command: \"" + commandName + "\"").queue();
         }
+    }
+
+    private record LogRedirect(TextChannel channel, List<String> prefixes) {
+
     }
 }
