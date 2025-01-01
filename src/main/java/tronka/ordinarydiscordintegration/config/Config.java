@@ -45,6 +45,7 @@ public class Config {
         public String kickMissingRoles = "You currently don't have the permission to join the server.";
         public String kickLinkCode = "Please Link your discord account by using\n/link %s\non discord";
         public String kickUnlinked = "Your account has been unlinked, to rejoin the server please relink your account.\nIf you don't know why this happened, please ask an administrator";
+        public String kickTimedOut = "You are timed out and currently can't join this server. Please retry when your discord timeout is over.";
     }
 
     public MessageStrings messages = new MessageStrings();
