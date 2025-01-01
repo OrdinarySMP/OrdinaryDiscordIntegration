@@ -18,12 +18,16 @@ import java.util.Optional;
 
 public class ConsoleBridge extends ListenerAdapter {
     private final OrdinaryDiscordIntegration integration;
-    private final TextChannel channel;
-    private final Role opRole;
-    private final List<LogRedirect> logRedirects;
-    public ConsoleBridge(OrdinaryDiscordIntegration integration, TextChannel consoleChannel) {
+    private TextChannel channel;
+    private Role opRole;
+    private List<LogRedirect> logRedirects;
+    public ConsoleBridge(OrdinaryDiscordIntegration integration) {
         this.integration = integration;
-        this.channel = consoleChannel;
+        integration.registerConfigReloadHandler(this::onConfigLoaded);
+    }
+
+    private void onConfigLoaded(Config config) {
+        channel = Utils.getTextChannel(integration.getJda(), config.commands.consoleChannel);
         String opRoleId =  integration.getConfig().commands.opRole;
         if (channel != null && !opRoleId.isEmpty()) {
             opRole = channel.getGuild().getRoleById(opRoleId);
@@ -31,7 +35,7 @@ public class ConsoleBridge extends ListenerAdapter {
             opRole = null;
         }
         logRedirects = new ArrayList<>();
-        for (Config.LogRedirectChannel logRedirectChannel : integration.getConfig().commands.logRedirectChannels) {
+        for (Config.LogRedirectChannel logRedirectChannel : config.commands.logRedirectChannels) {
             TextChannel channel = Utils.getTextChannel(integration.getJda(), logRedirectChannel.channel);
             if (channel != null) {
                 logRedirects.add(new LogRedirect(channel, logRedirectChannel.redirectPrefixes));

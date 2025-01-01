@@ -19,6 +19,10 @@ import tronka.ordinarydiscordintegration.compat.VanishIntegration;
 import tronka.ordinarydiscordintegration.config.Config;
 import tronka.ordinarydiscordintegration.linking.LinkManager;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
+
 public class OrdinaryDiscordIntegration extends ListenerAdapter implements DedicatedServerModInitializer {
     public static final String ModId = "ordinarydiscordintegration";
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -30,6 +34,7 @@ public class OrdinaryDiscordIntegration extends ListenerAdapter implements Dedic
     private ChatBridge chatBridge;
     private static OrdinaryDiscordIntegration instance;
     private Config config = Config.loadConfig();
+    private final List<Consumer<Config>> configReloadHandlers = new ArrayList<>();
     private LinkManager linkManager;
     private LuckPermsIntegration luckPermsIntegration;
     private VanishIntegration vanishIntegration;
@@ -44,7 +49,7 @@ public class OrdinaryDiscordIntegration extends ListenerAdapter implements Dedic
         ServerLifecycleEvents.SERVER_STARTING.register(s -> server = s);
         ServerLifecycleEvents.SERVER_STOPPED.register(this::onServerStopped);
         Thread jdaThread = new Thread(this::startJDA);
-        new InGameUnlinkCommand(this);
+        new InGameDiscordCommand(this);
         jdaThread.start();
     }
 
@@ -60,32 +65,33 @@ public class OrdinaryDiscordIntegration extends ListenerAdapter implements Dedic
 
     @Override
     public void onReady(@NotNull ReadyEvent event) {
-        TextChannel serverChatChannel = Utils.getTextChannel(jda, config.serverChatChannel);
-        TextChannel consoleChannel = Utils.getTextChannel(jda, config.commands.consoleChannel);
-        if (serverChatChannel == null) {
-            throw new RuntimeException("Please enter a valid serverChatChannelId");
+        String reloadResult = tryReloadConfig();
+        if (!reloadResult.isEmpty()) {
+            throw new RuntimeException(reloadResult);
         }
 
-        guild = serverChatChannel.getGuild();
-
         jda.addEventListener(new DiscordCommandHandler(this));
-        jda.addEventListener(chatBridge = new ChatBridge(this, serverChatChannel));
-        jda.addEventListener(consoleBridge = new ConsoleBridge(this, consoleChannel));
+        jda.addEventListener(chatBridge = new ChatBridge(this));
+        jda.addEventListener(consoleBridge = new ConsoleBridge(this));
         jda.addEventListener(linkManager = new LinkManager(this));
         jda.addEventListener(timeoutManager = new TimeoutManager(this));
         luckPermsIntegration = new LuckPermsIntegration(this);
         vanishIntegration = new VanishIntegration(this);
+        registerConfigReloadHandler(this::onConfigReloaded);
+    }
 
+    private void onConfigReloaded(Config config) {
+        // bring all members into cache
         guild.loadMembers().onSuccess(members -> {
-           setReady();
-           linkManager.unlinkPlayers(members);
+            setReady();
+            linkManager.unlinkPlayers(members);
         }).onError(t -> {
             LOGGER.error("Unable to load members", t);
             setReady();
         });
     }
 
-    public void setReady() {
+    private void setReady() {
         ready = true;
     }
 
@@ -137,7 +143,27 @@ public class OrdinaryDiscordIntegration extends ListenerAdapter implements Dedic
         return timeoutManager;
     }
 
-    public void reloadConfig() {
-        config = Config.loadConfig();
+    public String tryReloadConfig() {
+        LOGGER.info("Reloading Config...");
+        Config newConfig = Config.loadConfig();
+        TextChannel serverChatChannel = Utils.getTextChannel(jda, newConfig.serverChatChannel);
+        if (serverChatChannel == null) {
+            return "Fail to load config: Please enter a valid serverChatChannelId";
+        }
+
+
+        guild = serverChatChannel.getGuild();
+        config = newConfig;
+
+        for (Consumer<Config> handler : configReloadHandlers) {
+            handler.accept(config);
+        }
+        LOGGER.info("Config successfully reloaded!");
+        return "";
+    }
+
+    public void registerConfigReloadHandler(Consumer<Config> handler) {
+        configReloadHandlers.add(handler);
+        handler.accept(config);
     }
 }

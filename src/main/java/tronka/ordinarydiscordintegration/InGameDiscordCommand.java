@@ -12,11 +12,11 @@ import net.minecraft.text.Text;
 
 import java.util.Collection;
 
-public class InGameUnlinkCommand {
+public class InGameDiscordCommand {
 
     private final OrdinaryDiscordIntegration integration;
 
-    public InGameUnlinkCommand(OrdinaryDiscordIntegration integration) {
+    public InGameDiscordCommand(OrdinaryDiscordIntegration integration) {
         this.integration = integration;
         CommandRegistrationCallback.EVENT.register(this::register);
     }
@@ -50,6 +50,11 @@ public class InGameUnlinkCommand {
             int finalKickedCount = kickedCount;
             context.getSource().sendFeedback(() -> Text.literal("Successfully unlinked %d player and kicked %d".formatted(profiles.size(), finalKickedCount)), false);
             return 1;
-        }))));
+        }))).then(CommandManager.literal("reload").requires(source -> source.hasPermissionLevel(2)).executes(context -> {
+            String result = integration.tryReloadConfig();
+            final String feedback = result.isEmpty() ? "Successfully reloaded config!" : result;
+            context.getSource().sendFeedback(() -> Text.literal(feedback), result.isEmpty());
+            return 1;
+        })));
     }
 }
