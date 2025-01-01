@@ -112,6 +112,9 @@ public class LinkManager extends ListenerAdapter {
             String code = generateLinkCode(profile);
             return integration.getConfig().kickMessages.kickLinkCode.formatted(code);
         }
+        if (member.get().isTimedOut()) {
+            return integration.getConfig().kickMessages.kickTimedOut;
+        }
         return integration.getConfig().kickMessages.kickMissingRoles;
     }
 
