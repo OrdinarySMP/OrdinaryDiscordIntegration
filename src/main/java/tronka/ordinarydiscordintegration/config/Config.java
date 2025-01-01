@@ -65,6 +65,7 @@ public class Config {
     public DiscordLinkResults linkResults = new DiscordLinkResults();
 
     public static class DiscordLinkResults {
+        public String linkNotAllowed = "You are currently missing the required roles to link your account.";
         public String linkSuccess = "Successfully linked to %name%";
         public String failedUnknownCode = "Unknown code, did you copy it correctly?";
         public String failedTooManyLinked = "You cannot link to another account";

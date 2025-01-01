@@ -42,6 +42,15 @@ public class LinkManager extends ListenerAdapter {
         return Optional.empty();
     }
 
+    public boolean isAllowedToJoin(Member member) {
+        if (!integration.getConfig().joining.enableLinking) {return true;}
+        return Set.copyOf(member.getRoles()).containsAll(requiredRoles);
+    }
+
+    public boolean isAllowedToJoin(long discordId) {
+        return isAllowedToJoin(integration.getGuild().getMemberById(discordId));
+    }
+
     public Optional<Member> getDiscordOf(PlayerLink link) {
         Member member = integration.getGuild().getMemberById(link.getDiscordId());
         if (member != null) {
@@ -101,6 +110,9 @@ public class LinkManager extends ListenerAdapter {
     }
 
     public String confirmLink(long discordId, String code) {
+        if (!isAllowedToJoin(discordId)) {
+            return integration.getConfig().linkResults.linkNotAllowed;
+        }
         Optional<LinkRequest> linkRequest = getPlayerLinkFromCode(code);
         if (linkRequest.isEmpty()) { return integration.getConfig().linkResults.failedUnknownCode; }
         Optional<PlayerLink> existing = linkData.getPlayerLink(discordId);
