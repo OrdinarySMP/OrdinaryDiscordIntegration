@@ -149,7 +149,7 @@ public class LinkManager extends ListenerAdapter {
         long expiryTime = System.currentTimeMillis() + integration.getConfig().joining.linkCodeExpireMinutes * 60 * 1000;
         String code;
         do {
-            code = String.valueOf(RANDOM.nextInt(100000, 1000000));  // 6 digit code
+            code = String.valueOf(RANDOM.nextInt(100000, 1000000));  // 6-digit code
         }
         while (linkRequests.containsKey(code));
         linkRequests.put(code, new LinkRequest(profile.getId(), profile.getName(), expiryTime));
@@ -165,15 +165,10 @@ public class LinkManager extends ListenerAdapter {
             return;
         }
         Set<Long> memberSet = members.stream().map(Member::getIdLong).collect(Collectors.toSet());
-        final int[] purgedCount = {0};
-        linkData.getPlayerLinks().forEach(link -> {
-            if (!memberSet.contains(link.getDiscordId())) {
-                linkData.removePlayerLink(link);
-                purgedCount[0] += 1;
-            }
-        });
-        if (purgedCount[0] != 0) {
-            LOGGER.info("Purged {} linked players", purgedCount[0]);
+        List<PlayerLink> toRemove = linkData.getPlayerLinks().filter(link -> !memberSet.contains(link.getDiscordId())).toList();
+        toRemove.forEach(linkData::removePlayerLink);
+        if (!toRemove.isEmpty()) {
+            LOGGER.info("Purged {} linked players", toRemove.size());
         }
     }
 

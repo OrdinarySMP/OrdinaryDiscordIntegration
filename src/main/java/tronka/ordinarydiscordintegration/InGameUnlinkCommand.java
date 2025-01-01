@@ -22,7 +22,7 @@ public class InGameUnlinkCommand {
     }
 
     private void register(CommandDispatcher<ServerCommandSource> dispatcher, CommandRegistryAccess registry, CommandManager.RegistrationEnvironment environment) {
-        dispatcher.register(CommandManager.literal("unlink").executes(context -> {
+        dispatcher.register(CommandManager.literal("discord").then(CommandManager.literal("unlink").executes(context -> {
             ServerPlayerEntity player = context.getSource().getPlayer();
             if (player != null) {
                 integration.getLinkManager().unlinkPlayer(player.getUuid());
@@ -50,6 +50,6 @@ public class InGameUnlinkCommand {
             int finalKickedCount = kickedCount;
             context.getSource().sendFeedback(() -> Text.literal("Successfully unlinked %d player and kicked %d".formatted(profiles.size(), finalKickedCount)), false);
             return 1;
-        })));
+        }))));
     }
 }

@@ -1,6 +1,7 @@
 package tronka.ordinarydiscordintegration.linking;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import com.mojang.logging.LogUtils;
 import org.slf4j.Logger;
@@ -18,7 +19,7 @@ import java.util.stream.Stream;
 public class JsonLinkData implements LinkData {
     private List<PlayerLink> links;
     private final File file;
-    private static final Gson gson = new Gson();
+    private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
     private static final Logger LOGGER = LogUtils.getLogger();
 
     private JsonLinkData(File file) {
