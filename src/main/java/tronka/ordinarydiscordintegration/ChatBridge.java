@@ -17,6 +17,7 @@ import net.minecraft.network.message.SignedMessage;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
+import tronka.ordinarydiscordintegration.config.Config;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -24,7 +25,7 @@ import java.util.UUID;
 
 public class ChatBridge extends ListenerAdapter {
     private final OrdinaryDiscordIntegration integration;
-    private final TextChannel channel;
+    private TextChannel channel;
     private Webhook webhook;
     private static final String webhookId = "odi-bridge-hook";
     private boolean stopped = false;
@@ -32,14 +33,17 @@ public class ChatBridge extends ListenerAdapter {
     private String lastMessage;
     private int repeatedCount = 0;
 
-    public ChatBridge(OrdinaryDiscordIntegration integration, TextChannel serverChatChannel) {
+    public ChatBridge(OrdinaryDiscordIntegration integration) {
         this.integration = integration;
-        this.channel = serverChatChannel;
         ServerMessageEvents.CHAT_MESSAGE.register(this::onMcChatMessage);
         ServerLifecycleEvents.SERVER_STOPPING.register(this::onServerStopping);
+        integration.registerConfigReloadHandler(this::onConfigLoaded);
+        channel.sendMessage(integration.getConfig().messages.startMessage).queue();
+    }
 
-        // get webhook
-        if (integration.getConfig() .useWebHooks) {
+    private void onConfigLoaded(Config config) {
+        channel = Utils.getTextChannel(integration.getJda(), config.serverChatChannel);
+        if (integration.getConfig().useWebHooks) {
             channel.retrieveWebhooks().onSuccess((webhooks -> {
                 Optional<Webhook> hook = webhooks.stream().filter(w -> w.getOwner() == this.integration.getGuild().getSelfMember()).findFirst();
                 if (hook.isPresent()) {
@@ -50,7 +54,6 @@ public class ChatBridge extends ListenerAdapter {
             })).queue();
         }
 
-        channel.sendMessage(integration.getConfig().messages.startMessage).queue();
     }
 
     @Override

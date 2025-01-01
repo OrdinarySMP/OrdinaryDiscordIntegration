@@ -13,6 +13,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import org.slf4j.Logger;
 import tronka.ordinarydiscordintegration.OrdinaryDiscordIntegration;
 import tronka.ordinarydiscordintegration.Utils;
+import tronka.ordinarydiscordintegration.config.Config;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -22,14 +23,19 @@ public class LinkManager extends ListenerAdapter {
     private static final Random RANDOM = new Random();
     private static final Logger LOGGER = LogUtils.getLogger();
     private final Map<String, LinkRequest> linkRequests = new HashMap<>();
-    private final LinkData linkData = JsonLinkData.from(FabricLoader.getInstance().getConfigDir().resolve(OrdinaryDiscordIntegration.ModId + ".player-links.json").toFile());
+    private LinkData linkData;
     private final OrdinaryDiscordIntegration integration;
-    private final List<Role> requiredRoles;
-    private final List<Role> joinRoles;
+    private List<Role> requiredRoles;
+    private List<Role> joinRoles;
 
 
     public LinkManager(OrdinaryDiscordIntegration integration) {
         this.integration = integration;
+        integration.registerConfigReloadHandler(this::onConfigLoaded);
+    }
+
+    private void onConfigLoaded(Config config) {
+        linkData = JsonLinkData.from(FabricLoader.getInstance().getConfigDir().resolve(OrdinaryDiscordIntegration.ModId + ".player-links.json").toFile());
         requiredRoles = Utils.parseRoleList(integration.getGuild(), integration.getConfig().joining.requiredRoles);
         joinRoles = Utils.parseRoleList(integration.getGuild(), integration.getConfig().joining.joinRoles);
     }
