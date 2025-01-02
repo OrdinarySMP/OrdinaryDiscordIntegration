@@ -20,7 +20,10 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.*;
 import tronka.ordinarydiscordintegration.config.Config;
 
-import java.util.*;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.UUID;
 
 public class ChatBridge extends ListenerAdapter {
     private final OrdinaryDiscordIntegration integration;
@@ -67,14 +70,6 @@ public class ChatBridge extends ListenerAdapter {
 
         Message repliedMessage = event.getMessage().getReferencedMessage();
         MutableText message;
-        String messageContent = event.getMessage().getContentDisplay();
-
-        ArrayList<String> urls = new ArrayList<>();
-        ArrayList<String> messageParts = new ArrayList<>();
-        Utils.extractUrlsAndSplitMessage(messageContent, urls, messageParts);
-        System.out.println(urls);
-        System.out.println(messageParts);
-
         if (repliedMessage != null) {
             message = Text.literal(integration.getConfig().messages.chatMessageFormatReply
                     .replace("%user%", event.getMember().getEffectiveName())
@@ -86,13 +81,6 @@ public class ChatBridge extends ListenerAdapter {
             message = Text.literal(integration.getConfig().messages.chatMessageFormat
                         .replace("%user%", event.getMember().getEffectiveName())
                         .replace("%msg%", event.getMessage().getContentDisplay()));
-        }
-
-        for (int i = 0; i < messageParts.size(); i++) {
-            message.append(Text.literal(messageParts.get(i)));
-            if (i < urls.size()) {
-                message.append(Utils.createClickableLink(urls.get(i), integration));
-            }
         }
 
         List<Message.Attachment> attachments = event.getMessage().getAttachments();
