@@ -24,8 +24,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 public class ChatBridge extends ListenerAdapter {
+    private static final int DELAY_MS = 20;
     private final OrdinaryDiscordIntegration integration;
     private TextChannel channel;
     private Webhook webhook;
@@ -34,6 +36,7 @@ public class ChatBridge extends ListenerAdapter {
     private ServerPlayerEntity lastMessageSender;
     private String lastMessage;
     private int repeatedCount = 0;
+    private JDAWebhookClient webhookClient;
 
     public ChatBridge(OrdinaryDiscordIntegration integration) {
         this.integration = integration;
@@ -45,17 +48,29 @@ public class ChatBridge extends ListenerAdapter {
 
     private void onConfigLoaded(Config config) {
         channel = Utils.getTextChannel(integration.getJda(), config.serverChatChannel);
+        setWebhook(null);
         if (integration.getConfig().useWebHooks) {
             channel.retrieveWebhooks().onSuccess((webhooks -> {
                 Optional<Webhook> hook = webhooks.stream().filter(w -> w.getOwner() == this.integration.getGuild().getSelfMember()).findFirst();
                 if (hook.isPresent()) {
-                    webhook = hook.get();
+                    setWebhook(hook.get());
                 } else {
-                    channel.createWebhook(webhookId).onSuccess(w -> webhook = w).queue();
+                    channel.createWebhook(webhookId).onSuccess(this::setWebhook).queue();
                 }
             })).queue();
         }
 
+    }
+
+    private void setWebhook(Webhook webhook) {
+        this.webhook = webhook;
+        if (webhookClient != null) {
+            webhookClient.close();
+            webhookClient = null;
+        }
+        if (webhook != null) {
+            webhookClient = JDAWebhookClient.from(webhook);
+        }
     }
 
     @Override
@@ -99,10 +114,11 @@ public class ChatBridge extends ListenerAdapter {
     }
 
     public void onPlayerJoin(ServerPlayerEntity player) {
-        channel.sendMessage(
+        sendStackedMessage(
                 integration.getConfig().messages.playerJoinMessage
-                        .replace("%user%", player.getName().getString())
-        ).queue();
+                        .replace("%user%", player.getName().getString()),
+                null
+        );
         updateRichPresence(1);
     }
 
@@ -110,10 +126,10 @@ public class ChatBridge extends ListenerAdapter {
         if (stopped) {
             return;
         }
-        channel.sendMessage(
-                integration.getConfig().messages.playerLeaveMessage
-                        .replace("%user%", player.getName().getString())
-        ).queue();
+
+        sendStackedMessage(integration.getConfig().messages.playerLeaveMessage
+                .replace("%user%", player.getName().getString()),
+                null);
         updateRichPresence(-1);
     }
 
@@ -134,20 +150,19 @@ public class ChatBridge extends ListenerAdapter {
 
     public void onPlayerDeath(ServerPlayerEntity player, DamageSource source) {
         if (integration.getConfig().broadCastDeathMessages) {
-            channel.sendMessage(
-                    source.getDeathMessage(player).getString()
-            ).queue();
+            String message = source.getDeathMessage(player).getString();
+            sendStackedMessage(message, null);
         }
     }
 
     public void onReceiveAdvancement(ServerPlayerEntity player, AdvancementDisplay advancement){
         if(integration.getConfig().announceAdvancements) {
-            channel.sendMessage(
+            sendStackedMessage(
                     integration.getConfig().messages.advancementMessage
                             .replace("%user%", player.getName().getString())
                             .replace("%title%", advancement.getTitle().getString())
-                            .replace("%description%", advancement.getDescription().getString())
-            ).queue();
+                            .replace("%description%", advancement.getDescription().getString()),
+                    null);
         }
     }
 
@@ -163,28 +178,60 @@ public class ChatBridge extends ListenerAdapter {
 
     private void onMcChatMessage(SignedMessage signedMessage, ServerPlayerEntity player, MessageType.Parameters parameters) {
         String message = signedMessage.getContent().getLiteralString();
-        if (integration.getConfig().stackMessages && lastMessageSender == player && Objects.equals(message, lastMessage)) {
-            repeatedCount++;
-            return;
-        } else if(repeatedCount > 0) {
-            String displayCounter = repeatedCount > 1 ? " (" + repeatedCount + ")" : "";
-            String updatedLastMessage = lastMessage + displayCounter;
-            sendDiscordMessage(updatedLastMessage, lastMessageSender);
-        }
-
-        sendDiscordMessage(message, player);
-
-        lastMessageSender = player;
-        lastMessage = signedMessage.getContent().getLiteralString();
-        repeatedCount = 0;
+        sendStackedMessage(message, player);
+//        if (integration.getConfig().stackMessages && lastMessageSender == player && Objects.equals(message, lastMessage)) {
+//            repeatedCount++;
+//            return;
+//        } else if(repeatedCount > 0) {
+//            String displayCounter = repeatedCount > 1 ? " (" + repeatedCount + ")" : "";
+//            String updatedLastMessage = lastMessage + displayCounter;
+//            sendPlayerMessageToDiscord(updatedLastMessage, lastMessageSender);
+//        }
+//
+//        sendPlayerMessageToDiscord(message, player);
+//
+//        lastMessageSender = player;
+//        lastMessage = signedMessage.getContent().getLiteralString();
+//        repeatedCount = 0;
     }
 
-    private void sendDiscordMessage(String message, ServerPlayerEntity sender) {
+    private void sendStackedMessage(String message, ServerPlayerEntity sender) {
+        boolean shouldDelay = false;
+        if (integration.getConfig().stackMessages){
+            if (lastMessageSender == sender && message.equals(lastMessage)) {
+                repeatedCount++;
+                return;
+            } else if (repeatedCount > 0) {
+                String displayCounter = repeatedCount > 1 ? " (" + repeatedCount + ")" : "";
+                String updatedLastMessage = lastMessage + displayCounter;
+                sendChatMessageToDiscord(updatedLastMessage, lastMessageSender, false);
+                repeatedCount = 0;
+                shouldDelay = true;
+            }
+        }
+        sendChatMessageToDiscord(message, sender, shouldDelay);
+        lastMessageSender = sender;
+        lastMessage = message;
+    }
+
+    private void sendChatMessageToDiscord(String message, ServerPlayerEntity sender, boolean shouldDelay) {
+        if (sender == null) {
+            sendMiscMessageToDiscord(message, shouldDelay);
+            return;
+        }
+        sendPlayerMessageToDiscord(message, sender, shouldDelay);
+    }
+
+    private void sendMiscMessageToDiscord(String message, boolean shouldDelay) {
+        channel.sendMessage(message).queueAfter(shouldDelay ? DELAY_MS : 0, TimeUnit.MILLISECONDS);
+    }
+
+    private void sendPlayerMessageToDiscord(String message, ServerPlayerEntity sender, boolean shouldDelay) {
         if (webhook != null) {
             sendAsWebhook(message, sender);
         } else {
             String formattedMessage = sender.getName() + ": " + message;
-            channel.sendMessage(formattedMessage).queue();
+            channel.sendMessage(formattedMessage).queueAfter(shouldDelay ? DELAY_MS : 0, TimeUnit.MILLISECONDS);
         }
     }
 
@@ -195,14 +242,12 @@ public class ChatBridge extends ListenerAdapter {
     }
 
     private void sendAsWebhook(String message, ServerPlayerEntity player) {
-        try(JDAWebhookClient client = JDAWebhookClient.from(webhook)) {
-            String avatarUrl = getAvatarUrl(player);
-            WebhookMessage msg = new WebhookMessageBuilder()
-                    .setUsername(player.getName().getLiteralString())
-                    .setAvatarUrl(avatarUrl)
-                    .setContent(message)
-                    .build();
-            client.send(msg);
-        }
+        String avatarUrl = getAvatarUrl(player);
+        WebhookMessage msg = new WebhookMessageBuilder()
+                .setUsername(player.getName().getLiteralString())
+                .setAvatarUrl(avatarUrl)
+                .setContent(message)
+                .build();
+        webhookClient.send(msg);
     }
 }
