@@ -68,9 +68,21 @@ public class ChatBridge extends ListenerAdapter {
             return;
         }
 
-        MutableText message = Text.literal(integration.getConfig().messages.chatMessageFormat
+        Message repliedMessage = event.getMessage().getReferencedMessage();
+        MutableText message;
+        if (repliedMessage != null) {
+            message = Text.literal(integration.getConfig().messages.chatMessageFormatReply
+                    .replace("%user%", event.getMember().getEffectiveName())
+                    .replace("%userRepliedTo%", repliedMessage.getMember() != null
+                            ? repliedMessage.getMember().getEffectiveName()
+                            : repliedMessage.getAuthor().getEffectiveName())
+                    .replace("%msg%", event.getMessage().getContentDisplay()));
+        } else {
+            message = Text.literal(integration.getConfig().messages.chatMessageFormat
                         .replace("%user%", event.getMember().getEffectiveName())
                         .replace("%msg%", event.getMessage().getContentDisplay()));
+        }
+
 
         List<Message.Attachment> attachments = event.getMessage().getAttachments();
         if (!attachments.isEmpty()) {
