@@ -51,6 +51,7 @@ public class Config {
     public MessageStrings messages = new MessageStrings();
 
     public static class MessageStrings {
+        public int chatMessageAttachmentColor = 0xff00ff;
         public String chatMessageFormat = "[§9Discord§r] <%user%> %msg%";
         public String commandExecutedInfoText = "%user% executed ``%msg%``";
         public String playerJoinMessage = "%user% joined";

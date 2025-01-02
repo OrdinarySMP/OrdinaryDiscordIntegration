@@ -4,6 +4,7 @@ import club.minnced.discord.webhook.external.JDAWebhookClient;
 import club.minnced.discord.webhook.send.WebhookMessage;
 import club.minnced.discord.webhook.send.WebhookMessageBuilder;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.Webhook;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -16,9 +17,10 @@ import net.minecraft.network.message.MessageType;
 import net.minecraft.network.message.SignedMessage;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
+import net.minecraft.text.*;
 import tronka.ordinarydiscordintegration.config.Config;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -65,11 +67,23 @@ public class ChatBridge extends ListenerAdapter {
         if (event.getMember() == null || event.getAuthor().isBot()) {
             return;
         }
-        Text message = Text.of(
-                integration.getConfig().messages.chatMessageFormat
+
+        MutableText message = Text.literal(integration.getConfig().messages.chatMessageFormat
                         .replace("%user%", event.getMember().getEffectiveName())
-                        .replace("%msg%", event.getMessage().getContentDisplay())
-        );
+                        .replace("%msg%", event.getMessage().getContentDisplay()));
+
+        List<Message.Attachment> attachments = event.getMessage().getAttachments();
+        if (!attachments.isEmpty()) {
+            message.append(Text.literal("\nAttachments:"));
+            for (Message.Attachment attachment : attachments) {
+                MutableText attachmentText = Text.literal("\n" + attachment.getFileName()).setStyle(Style.EMPTY
+                        .withUnderline(true)
+                        .withColor(integration.getConfig().messages.chatMessageAttachmentColor)
+                        .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, attachment.getUrl())));
+                message.append(attachmentText);
+            }
+        }
+
         sendMcChatMessage(message);
     }
 
@@ -127,9 +141,7 @@ public class ChatBridge extends ListenerAdapter {
     }
 
     public void sendMcChatMessage(Text message) {
-        for (ServerPlayerEntity player : integration.getServer().getPlayerManager().getPlayerList()) {
-            player.sendMessage(message);
-        }
+        integration.getServer().getPlayerManager().broadcast(message, false);
     }
 
     private void onServerStopping(MinecraftServer minecraftServer) {
