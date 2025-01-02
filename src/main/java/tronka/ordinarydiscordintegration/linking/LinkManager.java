@@ -9,7 +9,9 @@ import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.internal.utils.PermissionUtil;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.Text;
 import org.slf4j.Logger;
 import tronka.ordinarydiscordintegration.OrdinaryDiscordIntegration;
 import tronka.ordinarydiscordintegration.Utils;
@@ -203,9 +205,29 @@ public class LinkManager extends ListenerAdapter {
     @Override
     public void onGuildMemberRemove(GuildMemberRemoveEvent event) {
         Member member = event.getMember();
-        if (member != null) {
-            unlinkPlayer(member.getIdLong());
-            LOGGER.info("Removed link of \"{}\" because they left the guild.", member.getEffectiveName());
+        if (member == null) { return; }
+
+        kickAccounts(member, integration.getConfig().kickMessages.kickOnLeave);
+        unlinkPlayer(member.getIdLong());
+        LOGGER.info("Removed link of \"{}\" because they left the guild.", member.getEffectiveName());
+    }
+
+    public void kickAccounts(Member member, String reason) {
+        Optional<PlayerLink> playerLink = integration.getLinkManager().getDataOf(member.getIdLong());
+        if (playerLink.isEmpty()) {
+            return;
+        }
+        MinecraftServer server = integration.getServer();
+        ServerPlayerEntity player = server.getPlayerManager().getPlayer(playerLink.get().getPlayerId());
+        if (player != null) {
+            player.networkHandler.disconnect(Text.of(reason));
+        }
+
+        for (PlayerData alt : playerLink.get().getAlts()) {
+            ServerPlayerEntity altPlayer = server.getPlayerManager().getPlayer(alt.getId());
+            if (altPlayer != null) {
+                altPlayer.networkHandler.disconnect(Text.of(reason));
+            }
         }
     }
 }
