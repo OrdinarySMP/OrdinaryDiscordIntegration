@@ -38,6 +38,7 @@ public class OrdinaryDiscordIntegration extends ListenerAdapter implements Dedic
     private LinkManager linkManager;
     private LuckPermsIntegration luckPermsIntegration;
     private VanishIntegration vanishIntegration;
+    private TimeoutManager timeoutManager;
 
     @Override
     public void onInitializeServer() {
@@ -73,6 +74,7 @@ public class OrdinaryDiscordIntegration extends ListenerAdapter implements Dedic
         jda.addEventListener(chatBridge = new ChatBridge(this));
         jda.addEventListener(consoleBridge = new ConsoleBridge(this));
         jda.addEventListener(linkManager = new LinkManager(this));
+        jda.addEventListener(timeoutManager = new TimeoutManager(this));
         luckPermsIntegration = new LuckPermsIntegration(this);
         vanishIntegration = new VanishIntegration(this);
         registerConfigReloadHandler(this::onConfigReloaded);
@@ -135,6 +137,10 @@ public class OrdinaryDiscordIntegration extends ListenerAdapter implements Dedic
 
     public VanishIntegration getVanishIntegration() {
         return vanishIntegration;
+    }
+
+    public TimeoutManager getTimeoutManager() {
+        return timeoutManager;
     }
 
     public String tryReloadConfig() {

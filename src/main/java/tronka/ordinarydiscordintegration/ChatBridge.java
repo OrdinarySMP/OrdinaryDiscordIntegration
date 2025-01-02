@@ -22,7 +22,6 @@ import tronka.ordinarydiscordintegration.config.Config;
 
 import java.util.*;
 
-
 public class ChatBridge extends ListenerAdapter {
     private final OrdinaryDiscordIntegration integration;
     private TextChannel channel;
@@ -82,11 +81,11 @@ public class ChatBridge extends ListenerAdapter {
                     .replace("%userRepliedTo%", repliedMessage.getMember() != null
                             ? repliedMessage.getMember().getEffectiveName()
                             : repliedMessage.getAuthor().getEffectiveName())
-                    .replace("%msg%", ""));
+                    .replace("%msg%", event.getMessage().getContentDisplay()));
         } else {
             message = Text.literal(integration.getConfig().messages.chatMessageFormat
                         .replace("%user%", event.getMember().getEffectiveName())
-                        .replace("%msg%", ""));
+                        .replace("%msg%", event.getMessage().getContentDisplay()));
         }
 
         for (int i = 0; i < messageParts.size(); i++) {
