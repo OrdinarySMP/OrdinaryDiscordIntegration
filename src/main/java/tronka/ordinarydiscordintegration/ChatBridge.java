@@ -20,10 +20,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.*;
 import tronka.ordinarydiscordintegration.config.Config;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 public class ChatBridge extends ListenerAdapter {
@@ -85,18 +82,35 @@ public class ChatBridge extends ListenerAdapter {
 
         Message repliedMessage = event.getMessage().getReferencedMessage();
         MutableText message;
+
+        String messageContent = event.getMessage().getContentDisplay();
+
+        List<String> urls = new ArrayList<>();
+        List<String> messageParts = Utils.extractUrlsAndSplitMessage(messageContent, urls);
+        String formatting;
+
         if (repliedMessage != null) {
-            message = Text.literal(integration.getConfig().messages.chatMessageFormatReply
+            formatting = integration.getConfig().messages.chatMessageFormatReply
                     .replace("%user%", event.getMember().getEffectiveName())
                     .replace("%userRepliedTo%", repliedMessage.getMember() != null
                             ? repliedMessage.getMember().getEffectiveName()
-                            : repliedMessage.getAuthor().getEffectiveName())
-                    .replace("%msg%", event.getMessage().getContentDisplay()));
+                            : repliedMessage.getAuthor().getEffectiveName());
         } else {
-            message = Text.literal(integration.getConfig().messages.chatMessageFormat
-                        .replace("%user%", event.getMember().getEffectiveName())
-                        .replace("%msg%", event.getMessage().getContentDisplay()));
+            formatting = integration.getConfig().messages.chatMessageFormat
+                        .replace("%user%", event.getMember().getEffectiveName());
         }
+        String[] msgSplit = formatting.split("%msg%");
+        message = Text.literal(msgSplit[0]);
+        String trailingPart = msgSplit.length == 1 ? "" : msgSplit[1];
+
+        for (int i = 0; i < messageParts.size(); i++) {
+            message.append(Text.literal(messageParts.get(i)));
+            if (i < urls.size()) {
+                message.append(Utils.createClickableLink(urls.get(i), integration));
+            }
+        }
+
+        message.append(Text.literal(trailingPart));
 
         List<Message.Attachment> attachments = event.getMessage().getAttachments();
         if (!attachments.isEmpty()) {
