@@ -8,6 +8,10 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.minecraft.text.ClickEvent;
+import net.minecraft.text.MutableText;
+import net.minecraft.text.Style;
+import net.minecraft.text.Text;
 import org.slf4j.Logger;
 
 import java.io.BufferedReader;
@@ -20,6 +24,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class Utils {
@@ -82,5 +88,39 @@ public class Utils {
             }
         }
         return false;
+    }
+
+    public static void extractUrlsAndSplitMessage(String input, ArrayList<String> urls, ArrayList<String> messageParts) {
+        // unescaped: https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)
+        String urlRegex = "https?://(www\\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)";
+        Pattern pattern = Pattern.compile(urlRegex);
+        Matcher matcher = pattern.matcher(input);
+
+        int lastEnd = 0;
+        while (matcher.find()) {
+            String url = matcher.group();
+            urls.add(url);
+
+            if (matcher.start() > lastEnd) {
+                messageParts.add(input.substring(lastEnd, matcher.start()));
+            } else if (lastEnd == 0) {
+                messageParts.add("");
+            }
+            lastEnd = matcher.end();
+        }
+
+        if (lastEnd < input.length()) {
+            messageParts.add(input.substring(lastEnd));
+        } else if (urls.isEmpty()) {
+            messageParts.add(input);
+        }
+    }
+
+    public static MutableText createClickableLink(String url, OrdinaryDiscordIntegration integration) {
+        return Text.literal(url)
+                .setStyle(Style.EMPTY
+                        .withColor(integration.getConfig().messages.chatMessageLinkColor)
+                        .withUnderline(true)
+                        .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, url)));
     }
 }
