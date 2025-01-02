@@ -83,7 +83,6 @@ public class ChatBridge extends ListenerAdapter {
                         .replace("%msg%", event.getMessage().getContentDisplay()));
         }
 
-
         List<Message.Attachment> attachments = event.getMessage().getAttachments();
         if (!attachments.isEmpty()) {
             message.append(Text.literal("\nAttachments:"));

@@ -69,4 +69,14 @@ public class PlayerLink {
     public void setDataObj(LinkData dataObj) {
         this.dataObj = dataObj;
     }
+
+    @Override
+    public String toString() {
+        return "PlayerLink{" +
+                "playerId=" + playerId +
+                ", discordId=" + discordId +
+                ", alts=" + alts +
+                ", dataObj=" + dataObj +
+                '}';
+    }
 }
