@@ -3,6 +3,7 @@ package tronka.ordinarydiscordintegration;
 import club.minnced.discord.webhook.external.JDAWebhookClient;
 import club.minnced.discord.webhook.send.WebhookMessage;
 import club.minnced.discord.webhook.send.WebhookMessageBuilder;
+import eu.pb4.placeholders.api.node.TextNode;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.Webhook;
@@ -81,50 +82,30 @@ public class ChatBridge extends ListenerAdapter {
         }
 
         Message repliedMessage = event.getMessage().getReferencedMessage();
-        MutableText message;
 
-        String messageContent = event.getMessage().getContentDisplay();
+        String baseText = repliedMessage == null ? integration.getConfig().messages.chatMessageFormat : integration.getConfig().messages.chatMessageFormatReply;
 
-        List<String> urls = new ArrayList<>();
-        List<String> messageParts = Utils.extractUrlsAndSplitMessage(messageContent, urls);
-        String formatting;
-
-        if (repliedMessage != null) {
-            formatting = integration.getConfig().messages.chatMessageFormatReply
-                    .replace("%user%", event.getMember().getEffectiveName())
-                    .replace("%userRepliedTo%", repliedMessage.getMember() != null
-                            ? repliedMessage.getMember().getEffectiveName()
-                            : repliedMessage.getAuthor().getEffectiveName());
+        TextNode attachmentInfo;
+        if (!event.getMessage().getAttachments().isEmpty()) {
+            List<TextNode> attachments = new ArrayList<>(List.of(TextNode.of("\nAttachments:")));
+            for (Message.Attachment attachment : event.getMessage().getAttachments()) {
+                attachments.add(TextReplacer.create()
+                        .replace("link", attachment.getUrl())
+                        .replace("name", attachment.getFileName())
+                        .applyNode(integration.getConfig().messages.attachmentFormat));
+            }
+            attachmentInfo = TextNode.wrap(attachments);
         } else {
-            formatting = integration.getConfig().messages.chatMessageFormat
-                        .replace("%user%", event.getMember().getEffectiveName());
-        }
-        String[] msgSplit = formatting.split("%msg%");
-        message = Text.literal(msgSplit[0]);
-        String trailingPart = msgSplit.length == 1 ? "" : msgSplit[1];
-
-        for (int i = 0; i < messageParts.size(); i++) {
-            message.append(Text.literal(messageParts.get(i)));
-            if (i < urls.size()) {
-                message.append(Utils.createClickableLink(urls.get(i), integration));
-            }
+            attachmentInfo = TextNode.empty();
         }
 
-        message.append(Text.literal(trailingPart));
-
-        List<Message.Attachment> attachments = event.getMessage().getAttachments();
-        if (!attachments.isEmpty()) {
-            message.append(Text.literal("\nAttachments:"));
-            for (Message.Attachment attachment : attachments) {
-                MutableText attachmentText = Text.literal("\n" + attachment.getFileName()).setStyle(Style.EMPTY
-                        .withUnderline(true)
-                        .withColor(integration.getConfig().messages.chatMessageAttachmentColor)
-                        .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, attachment.getUrl())));
-                message.append(attachmentText);
-            }
-        }
-
-        sendMcChatMessage(message);
+        String replyUser = repliedMessage == null ? "%userRepliedTo%" : (repliedMessage.getMember() == null ? repliedMessage.getAuthor().getEffectiveName() : repliedMessage.getMember().getEffectiveName());
+        sendMcChatMessage(TextReplacer.create()
+                .replace("msg", Utils.parseUrls(event.getMessage().getContentDisplay(), integration.getConfig()))
+                .replace("user",  event.getMember().getEffectiveName())
+                .replace("userRepliedTo", replyUser)
+                .replace("attachments", attachmentInfo)
+                .apply(baseText));
     }
 
     public void onPlayerJoin(ServerPlayerEntity player) {

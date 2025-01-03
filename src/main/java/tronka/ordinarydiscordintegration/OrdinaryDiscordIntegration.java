@@ -11,6 +11,7 @@ import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import net.fabricmc.api.DedicatedServerModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.server.MinecraftServer;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -19,6 +20,7 @@ import tronka.ordinarydiscordintegration.compat.VanishIntegration;
 import tronka.ordinarydiscordintegration.config.Config;
 import tronka.ordinarydiscordintegration.linking.LinkManager;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -165,5 +167,9 @@ public class OrdinaryDiscordIntegration extends ListenerAdapter implements Dedic
     public void registerConfigReloadHandler(Consumer<Config> handler) {
         configReloadHandlers.add(handler);
         handler.accept(config);
+    }
+
+    public static Path getConfigFolder() {
+        return FabricLoader.getInstance().getConfigDir().resolve("odi");
     }
 }

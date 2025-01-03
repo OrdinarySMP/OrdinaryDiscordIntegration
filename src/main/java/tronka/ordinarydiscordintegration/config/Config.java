@@ -53,10 +53,11 @@ public class Config {
     public MessageStrings messages = new MessageStrings();
 
     public static class MessageStrings {
-        public int chatMessageAttachmentColor = 0xff00ff;
         public int chatMessageLinkColor = 0x1a0dab;
-        public String chatMessageFormat = "[§9Discord§r] <%user%> %msg%";
-        public String chatMessageFormatReply = "[§9Discord§r] <%user% replied to %userRepliedTo%> %msg%";
+        public String chatMessageFormat = "[<blue>Discord</blue>] <%user%> %msg% %attachments%";
+        public String chatMessageFormatReply = "[<blue>Discord</blue>] <%user% replied to %userRepliedTo%> %msg% %attachments%";
+        public String linkFormat = "<blue><underline><i><url:'%link%'>%link%</url></i></underline></blue>";
+        public String attachmentFormat = "[<blue><url:'%link%'>%name%</url></blue>]";
         public String commandExecutedInfoText = "%user% executed ``%msg%``";
         public String playerJoinMessage = "%user% joined";
         public String playerLeaveMessage = "%user% left";
@@ -131,7 +132,7 @@ public class Config {
     }
 
     public static Config loadConfig() {
-        Path configDir = FabricLoader.getInstance().getConfigDir();
+        Path configDir = OrdinaryDiscordIntegration.getConfigFolder();
         File configFile = configDir.resolve(OrdinaryDiscordIntegration.ModId + ".toml").toFile();
         if (configFile.exists()){
             return new Toml().read(configFile).to(Config.class);
