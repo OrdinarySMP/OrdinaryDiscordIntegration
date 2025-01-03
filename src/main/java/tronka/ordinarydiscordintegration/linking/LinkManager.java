@@ -37,7 +37,7 @@ public class LinkManager extends ListenerAdapter {
     }
 
     private void onConfigLoaded(Config config) {
-        linkData = JsonLinkData.from(FabricLoader.getInstance().getConfigDir().resolve(OrdinaryDiscordIntegration.ModId + ".player-links.json").toFile());
+        linkData = JsonLinkData.from(OrdinaryDiscordIntegration.getConfigFolder().resolve(OrdinaryDiscordIntegration.ModId + ".player-links.json").toFile());
         requiredRoles = Utils.parseRoleList(integration.getGuild(), integration.getConfig().joining.requiredRoles);
         joinRoles = Utils.parseRoleList(integration.getGuild(), integration.getConfig().joining.joinRoles);
     }

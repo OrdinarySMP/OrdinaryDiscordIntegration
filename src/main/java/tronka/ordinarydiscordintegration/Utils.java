@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.yggdrasil.ProfileResult;
 import com.mojang.logging.LogUtils;
+import eu.pb4.placeholders.api.node.TextNode;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Role;
@@ -12,7 +13,9 @@ import net.minecraft.text.ClickEvent;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
+import net.minecraft.util.Pair;
 import org.slf4j.Logger;
+import tronka.ordinarydiscordintegration.config.Config;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -90,32 +93,19 @@ public class Utils {
         return false;
     }
 
-    public static List<String> extractUrlsAndSplitMessage(String input, List<String> urls) {
-        // unescaped: https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)
-        String urlRegex = "https?://(www\\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b([-a-zA-Z0-9()@:%_+.~#?&/=]*)";
-        Pattern pattern = Pattern.compile(urlRegex);
-        Matcher matcher = pattern.matcher(input);
-        List<String> messageParts = new ArrayList<>();
+    private static final Pattern URL_PATTERN = Pattern.compile("https?://[-a-zA-Z0-9@:%._+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b[-a-zA-Z0-9()@:%_+.~#?&/=]*");
 
+    public static TextNode parseUrls(String text, Config config) {
+        List<TextNode> nodes = new ArrayList<>();
+        Matcher matcher = URL_PATTERN.matcher(text);
         int lastEnd = 0;
-        while (matcher.find()) {
-            String url = matcher.group();
-            urls.add(url);
-
-            if (matcher.start() > lastEnd) {
-                messageParts.add(input.substring(lastEnd, matcher.start()));
-            } else if (lastEnd == 0) {
-                messageParts.add("");
-            }
+        while(matcher.find()) {
+            nodes.add(TextNode.of(text.substring(lastEnd, matcher.start())));
+            nodes.add(TextReplacer.create().replace("link", matcher.group()).applyNode(config.messages.linkFormat));
             lastEnd = matcher.end();
         }
-
-        if (lastEnd < input.length()) {
-            messageParts.add(input.substring(lastEnd));
-        } else if (urls.isEmpty()) {
-            messageParts.add(input);
-        }
-        return messageParts;
+        nodes.add(TextNode.of(text.substring(lastEnd)));
+        return TextNode.wrap(nodes);
     }
 
     public static MutableText createClickableLink(String url, OrdinaryDiscordIntegration integration) {
