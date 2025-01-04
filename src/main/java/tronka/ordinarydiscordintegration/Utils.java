@@ -13,8 +13,8 @@ import net.minecraft.text.ClickEvent;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
-import net.minecraft.util.Pair;
 import org.slf4j.Logger;
+import tronka.ordinarydiscordintegration.chat.TextReplacer;
 import tronka.ordinarydiscordintegration.config.Config;
 
 import java.io.BufferedReader;

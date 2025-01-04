@@ -15,6 +15,7 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.server.MinecraftServer;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
+import tronka.ordinarydiscordintegration.chat.ChatBridge;
 import tronka.ordinarydiscordintegration.compat.LuckPermsIntegration;
 import tronka.ordinarydiscordintegration.compat.VanishIntegration;
 import tronka.ordinarydiscordintegration.config.Config;
