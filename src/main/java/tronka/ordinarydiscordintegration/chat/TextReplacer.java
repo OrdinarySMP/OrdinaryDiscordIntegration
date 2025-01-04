@@ -1,20 +1,13 @@
-package tronka.ordinarydiscordintegration;
+package tronka.ordinarydiscordintegration.chat;
 
-import eu.pb4.placeholders.api.node.LiteralNode;
 import eu.pb4.placeholders.api.node.TextNode;
-import eu.pb4.placeholders.api.node.parent.ClickActionNode;
 import eu.pb4.placeholders.api.parsers.NodeParser;
 import eu.pb4.placeholders.api.parsers.ParserBuilder;
 import eu.pb4.placeholders.api.parsers.TagLikeParser;
-import net.minecraft.text.ClickEvent;
 import net.minecraft.text.Text;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class TextReplacer {
     private final ParserBuilder builder;

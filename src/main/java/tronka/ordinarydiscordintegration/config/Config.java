@@ -2,11 +2,11 @@ package tronka.ordinarydiscordintegration.config;
 
 import com.moandjiezana.toml.Toml;
 import com.moandjiezana.toml.TomlWriter;
-import net.fabricmc.loader.api.FabricLoader;
 import tronka.ordinarydiscordintegration.OrdinaryDiscordIntegration;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,6 +24,7 @@ public class Config {
     public JoinOptions joining = new JoinOptions();
 
     public boolean stackMessages = false;
+    public int stackMessagesTimeoutInSec = 60;
 
     public boolean broadCastDeathMessages = true;
     public boolean announceAdvancements = true;
@@ -55,7 +56,7 @@ public class Config {
     public static class MessageStrings {
         public int chatMessageLinkColor = 0x1a0dab;
         public String chatMessageFormat = "[<blue>Discord</blue>] <%user%> %msg% %attachments%";
-        public String chatMessageFormatReply = "[<blue>Discord</blue>] <%user% replied to %userRepliedTo%> %msg% %attachments%";
+        public String chatMessageFormatReply = " [<blue>Discord</blue>] <%user% replied to %userRepliedTo%> %msg% %attachments%";
         public String linkFormat = "<blue><underline><i><url:'%link%'>%link%</url></i></underline></blue>";
         public String attachmentFormat = "[<blue><url:'%link%'>%name%</url></blue>]";
         public String commandExecutedInfoText = "%user% executed ``%msg%``";
@@ -99,7 +100,7 @@ public class Config {
         public List<String> ignoredCommands = new ArrayList<>();
         public String commandPrefix = "//";
         public String opRole = "";
-        public List<LogRedirectChannel> logRedirectChannels = List.of(LogRedirectChannel.of("", List.of("w", "msg", "tell")));
+        public List<LogRedirectChannel> logRedirectChannels = List.of(LogRedirectChannel.of("", List.of("w ", "msg ", "tell ")));
 
         public List<BridgeCommand> commands = List.of(
             BridgeCommand.of("kick", "kick %args%"),
@@ -139,6 +140,7 @@ public class Config {
         } else {
             Config config = new Config();
             try {
+                Files.createDirectories(configDir);
                 new TomlWriter().write(config, configFile);
             } catch (IOException ignored) { }
             return config;
