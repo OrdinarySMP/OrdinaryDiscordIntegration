@@ -16,5 +16,6 @@ public class CommandManagerMixin {
     @Inject(method = "execute", at = @At("HEAD"))
     private void onExecuteCommand(ParseResults<ServerCommandSource> parseResults, String command, CallbackInfo ci) {
         OrdinaryDiscordIntegration.getInstance().getConsoleBridge().onCommandExecute(parseResults.getContext().getSource(), command);
+        OrdinaryDiscordIntegration.getInstance().getChatBridge().onCommandExecute(parseResults.getContext().getSource(), command);
     }
 }

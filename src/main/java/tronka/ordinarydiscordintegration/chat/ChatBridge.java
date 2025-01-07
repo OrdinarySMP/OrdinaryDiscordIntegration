@@ -16,6 +16,7 @@ import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.network.message.MessageType;
 import net.minecraft.network.message.SignedMessage;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import org.jetbrains.annotations.NotNull;
@@ -185,5 +186,28 @@ public class ChatBridge extends ListenerAdapter {
         if (this.messageSender != null) {
             this.messageSender.onMessageDelete(event.getMessageIdLong());
         }
+    }
+
+    public void onCommandExecute(ServerCommandSource source, String command) {
+        if (!command.startsWith("me") && !command.startsWith("say")) {
+            return;
+        }
+        ServerPlayerEntity sender;
+        String prefix;
+        if (source.getEntity() instanceof ServerPlayerEntity player) {
+            sender = player;
+            prefix = "";
+        } else {
+            sender = null;
+            prefix = source.getName() + ": ";
+        }
+        String data = command.split(" ", 2)[1];
+        String message;
+        if (command.startsWith("me")) {
+            message = prefix + "*" + data + "*";
+        } else {
+            message = prefix + data;
+        }
+        sendMessageToDiscord(message, sender);
     }
 }
