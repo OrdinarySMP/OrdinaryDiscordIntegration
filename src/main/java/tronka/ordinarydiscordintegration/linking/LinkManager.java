@@ -8,7 +8,6 @@ import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.internal.utils.PermissionUtil;
-import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
@@ -38,8 +37,8 @@ public class LinkManager extends ListenerAdapter {
 
     private void onConfigLoaded(Config config) {
         linkData = JsonLinkData.from(OrdinaryDiscordIntegration.getConfigFolder().resolve(OrdinaryDiscordIntegration.ModId + ".player-links.json").toFile());
-        requiredRoles = Utils.parseRoleList(integration.getGuild(), integration.getConfig().joining.requiredRoles);
-        joinRoles = Utils.parseRoleList(integration.getGuild(), integration.getConfig().joining.joinRoles);
+        requiredRoles = Utils.parseRoleList(integration.getGuild(), integration.getConfig().linking.requiredRoles);
+        joinRoles = Utils.parseRoleList(integration.getGuild(), integration.getConfig().linking.joinRoles);
     }
 
     public Optional<Member> getDiscordOf(UUID playerId) {
@@ -51,7 +50,7 @@ public class LinkManager extends ListenerAdapter {
     }
 
     public boolean isAllowedToJoin(Member member) {
-        if (!integration.getConfig().joining.enableLinking) {return true;}
+        if (!integration.getConfig().linking.enableLinking) {return true;}
         return Set.copyOf(member.getRoles()).containsAll(requiredRoles);
     }
 
@@ -76,10 +75,10 @@ public class LinkManager extends ListenerAdapter {
     }
 
     public boolean canJoin(UUID playerId) {
-        if (!integration.getConfig().joining.enableLinking) {return true;}
+        if (!integration.getConfig().linking.enableLinking) {return true;}
         Optional<Member> member = getDiscordOf(playerId);
         if (member.isEmpty()) {return false;}
-        if (integration.getConfig().joining.disallowTimeoutMembersToJoin && member.get().isTimedOut()) {return false;}
+        if (integration.getConfig().linking.disallowTimeoutMembersToJoin && member.get().isTimedOut()) {return false;}
         return Set.copyOf(member.get().getRoles()).containsAll(requiredRoles);
     }
 
@@ -99,7 +98,7 @@ public class LinkManager extends ListenerAdapter {
         }
 
         if (data.getPlayerId().equals(player.getUuid())
-                && integration.getConfig().joining.renameOnJoin
+                && integration.getConfig().linking.renameOnJoin
                 && PermissionUtil.checkPermission(integration.getGuild().getSelfMember(), Permission.NICKNAME_MANAGE)) {
             member.modifyNickname(player.getName().getString()).queue();
         }
@@ -129,7 +128,7 @@ public class LinkManager extends ListenerAdapter {
         Optional<PlayerLink> existing = linkData.getPlayerLink(discordId);
         if (existing.isPresent()) {
             PlayerLink link = existing.get();
-            if (link.altCount() >= integration.getConfig().maxAlts) {
+            if (link.altCount() >= integration.getConfig().linking.maxAlts) {
                 return integration.getConfig().linkResults.failedTooManyLinked;
             }
             link.addAlt(PlayerData.from(linkRequest.get()));
@@ -157,7 +156,7 @@ public class LinkManager extends ListenerAdapter {
             purgeCodes();
         }
 
-        long expiryTime = System.currentTimeMillis() + integration.getConfig().joining.linkCodeExpireMinutes * 60 * 1000;
+        long expiryTime = System.currentTimeMillis() + integration.getConfig().linking.linkCodeExpireMinutes * 60 * 1000;
         String code;
         do {
             code = String.valueOf(RANDOM.nextInt(100000, 1000000));  // 6-digit code
@@ -172,7 +171,7 @@ public class LinkManager extends ListenerAdapter {
     }
 
     public void unlinkPlayers(List<Member> members) {
-        if (!integration.getConfig().unlinkOnLeave) {
+        if (!integration.getConfig().linking.unlinkOnLeave) {
             return;
         }
         Set<Long> memberSet = members.stream().map(Member::getIdLong).collect(Collectors.toSet());

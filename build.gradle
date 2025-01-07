@@ -33,6 +33,7 @@ repositories {
         url "https://maven.nucleoid.xyz/"
         name "Nucleoid"
     }
+    maven { url 'https://jitpack.io' }
 }
 
 configurations {
@@ -85,7 +86,7 @@ dependencies {
     }
 
     embed implementation('club.minnced:discord-webhooks:0.8.4')
-    embed implementation('com.moandjiezana.toml:toml4j:0.7.2')
+    embed implementation("de.erdbeerbaerlp:toml4j:dd60f51")
     compileOnly 'net.luckperms:api:5.4'
     modCompileOnly "maven.modrinth:vanish:1.5.9+1.21.3"
     modImplementation("eu.pb4:placeholder-api:2.5.1+1.21.3")
