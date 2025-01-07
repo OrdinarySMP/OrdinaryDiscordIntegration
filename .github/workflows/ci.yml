@@ -117,4 +117,22 @@ jobs:
             @semantic-release/github
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract Minecraft version
+        run: |
+          minecraft_version=$(grep "^minecraft_version=" "gradle.properties" | cut -d'=' -f2)
+          echo "MINECRAFT_VERSION=$minecraft_version" >> $GITHUB_ENV
+      - name: Upload to Modrinth
+        if: steps.semantic-release.outputs.new_release_version != ''
+        uses: cloudnode-pro/modrinth-publish@2.0.0
+        with:
+          token: ${{ secrets.MODRINTH_TOKEN }}
+          project: ${{ secrets.MODRINTH_PROJECT_ID }}
+          name: v${{ steps.semantic-release.outputs.new_release_version }}
+          version: ${{ steps.semantic-release.outputs.new_release_version }}
+          changelog: ${{ steps.semantic-release.outputs.new_release_notes }}
+          loaders: |-
+            fabric
+          game-versions: |-
+            ${{ env.MINECRAFT_VERSION }}
+          files: build/libs/DiscordJustSync-${{ steps.semantic-release.outputs.new_release_version }}.jar
 
