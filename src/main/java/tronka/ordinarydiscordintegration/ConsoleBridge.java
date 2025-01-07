@@ -70,7 +70,7 @@ public class ConsoleBridge extends ListenerAdapter {
         target.sendMessage(
                 integration.getConfig().messages.commandExecutedInfoText
                         .replace("%user%", source.getName())
-                        .replace("%msg%", command)
+                        .replace("%cmd%", command)
         ).queue();
     }
 
@@ -92,14 +92,14 @@ public class ConsoleBridge extends ListenerAdapter {
         message = message.substring(integration.getConfig().commands.commandPrefix.length());
         if (message.equals("help")) {
             EmbedBuilder embed = new EmbedBuilder();
-            integration.getConfig().commands.commands.forEach(command -> embed.addField(command.commandName, command.inGameAction.replace("%args%", "<args>"), true));
+            integration.getConfig().commands.commandList.forEach(command -> embed.addField(command.commandName, command.inGameAction.replace("%args%", "<args>"), true));
             event.getChannel().sendMessageEmbeds(embed.build()).queue();
             return;
         }
         String[] commandParts = message.split(" ", 2);
         String commandName = commandParts[0].toLowerCase();
         String commandArgs = commandParts.length == 2 ? commandParts[1] : "";
-        Optional<Config.BridgeCommand> commandOptional = integration.getConfig().commands.commands.stream().filter(cmd -> cmd.commandName.equals(commandName)).findFirst();
+        Optional<Config.BridgeCommand> commandOptional = integration.getConfig().commands.commandList.stream().filter(cmd -> cmd.commandName.equals(commandName)).findFirst();
         if (commandOptional.isPresent()) {
             Config.BridgeCommand command = commandOptional.get();
             DiscordCommandSender commandSender = new DiscordCommandSender(integration.getServer(), event.getAuthor().getAsMention(), feedback -> {

@@ -27,7 +27,7 @@ public class InGameDiscordCommand {
             if (player != null) {
                 integration.getLinkManager().unlinkPlayer(player.getUuid());
                 context.getSource().sendFeedback(() -> Text.literal("Unlinked!"), false);
-                if (integration.getConfig().joining.enableLinking) {
+                if (integration.getConfig().linking.enableLinking) {
                     player.networkHandler.disconnect(Text.literal(integration.getConfig().kickMessages.kickUnlinked));
                 }
             } else {
@@ -41,7 +41,7 @@ public class InGameDiscordCommand {
                 integration.getLinkManager().unlinkPlayer(profile.getId());
                 ServerPlayerEntity player = context.getSource().getServer().getPlayerManager().getPlayer(profile.getId());
                 if (player != null) {
-                    if (integration.getConfig().joining.enableLinking) {
+                    if (integration.getConfig().linking.enableLinking) {
                         player.networkHandler.disconnect(Text.literal(integration.getConfig().kickMessages.kickUnlinked));
                     }
                     kickedCount++;

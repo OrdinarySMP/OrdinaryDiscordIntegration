@@ -149,7 +149,7 @@ public class ChatBridge extends ListenerAdapter {
     }
 
     public void onReceiveAdvancement(ServerPlayerEntity player, AdvancementDisplay advancement){
-        if(integration.getConfig().announceAdvancements) {
+        if(integration.getConfig().announceAdvancements && advancement.shouldAnnounceToChat()) {
             sendMessageToDiscord(
                     integration.getConfig().messages.advancementMessage
                             .replace("%user%", player.getName().getString())

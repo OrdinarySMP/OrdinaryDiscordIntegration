@@ -9,10 +9,6 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
-import net.minecraft.text.ClickEvent;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Style;
-import net.minecraft.text.Text;
 import org.slf4j.Logger;
 import tronka.ordinarydiscordintegration.chat.TextReplacer;
 import tronka.ordinarydiscordintegration.config.Config;
@@ -106,13 +102,5 @@ public class Utils {
         }
         nodes.add(TextNode.of(text.substring(lastEnd)));
         return TextNode.wrap(nodes);
-    }
-
-    public static MutableText createClickableLink(String url, OrdinaryDiscordIntegration integration) {
-        return Text.literal(url)
-                .setStyle(Style.EMPTY
-                        .withColor(integration.getConfig().messages.chatMessageLinkColor)
-                        .withUnderline(true)
-                        .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, url)));
     }
 }
