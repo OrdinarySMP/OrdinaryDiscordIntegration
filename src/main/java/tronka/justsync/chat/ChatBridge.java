@@ -59,7 +59,7 @@ public class ChatBridge extends ListenerAdapter {
                 }
             })).queue();
         }
-
+        this.updateRichPresence(0);
     }
 
     private void setWebhook(Webhook webhook) {
