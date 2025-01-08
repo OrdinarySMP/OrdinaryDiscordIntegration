@@ -29,7 +29,7 @@ import tronka.justsync.config.Config;
 
 public class ChatBridge extends ListenerAdapter {
 
-    private static final String webhookId = "discord-js-hook";
+    private static final String webhookId = "justsync-hook";
     private final JustSyncApplication integration;
     private TextChannel channel;
     private boolean stopped = false;
