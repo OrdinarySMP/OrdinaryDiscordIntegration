@@ -26,7 +26,7 @@ public class InGameDiscordCommand {
             CommandManager.literal("discord").then(CommandManager.literal("unlink").executes(context -> {
                 ServerPlayerEntity player = context.getSource().getPlayer();
                 if (player != null) {
-                    integration.getLinkManager().unlinkPlayer(player.getUuid());
+                    this.integration.getLinkManager().unlinkPlayer(player.getUuid());
                     context.getSource().sendFeedback(() -> Text.literal("Unlinked!"), false);
                 } else {
                     context.getSource().sendFeedback(() -> Text.literal("Player Only!"), false);
@@ -37,7 +37,7 @@ public class InGameDiscordCommand {
                     Collection<GameProfile> profiles = GameProfileArgumentType.getProfileArgument(context, "player");
 
                     for (GameProfile profile : profiles) {
-                        integration.getLinkManager().unlinkPlayer(profile.getId());
+                        this.integration.getLinkManager().unlinkPlayer(profile.getId());
                     }
                     context.getSource().sendFeedback(() -> Text.literal(
                             "Successfully unlinked %d player(s)".formatted(profiles.size())),
@@ -45,7 +45,7 @@ public class InGameDiscordCommand {
                     return 1;
                 }))).then(
                 CommandManager.literal("reload").requires(source -> source.hasPermissionLevel(2)).executes(context -> {
-                    String result = integration.tryReloadConfig();
+                    String result = this.integration.tryReloadConfig();
                     final String feedback = result.isEmpty() ? "Successfully reloaded config!" : result;
                     context.getSource().sendFeedback(() -> Text.literal(feedback), result.isEmpty());
                     return 1;

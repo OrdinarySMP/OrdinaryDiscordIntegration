@@ -25,22 +25,22 @@ public class LuckPermsIntegration {
             return;
         }
         try {
-            luckPerms = LuckPermsProvider.get();
-            loaded = true;
+            this.luckPerms = LuckPermsProvider.get();
+            this.loaded = true;
         } catch (Exception ignored) {
             LOGGER.error("Luck-perms not loaded, disabling integration");
         }
     }
 
     public void setAlt(UUID uuid) {
-        if (!loaded) {
+        if (!this.loaded) {
             return;
         }
-        luckPerms.getUserManager().loadUser(uuid).thenAccept(user -> {
-            for (String group : integration.getConfig().integrations.luckPerms.altGroups) {
+        this.luckPerms.getUserManager().loadUser(uuid).thenAccept(user -> {
+            for (String group : this.integration.getConfig().integrations.luckPerms.altGroups) {
                 user.data().add(LuckPermsHelper.getNode(group));
             }
-            luckPerms.getUserManager().saveUser(user);
+            this.luckPerms.getUserManager().saveUser(user);
         });
     }
 }

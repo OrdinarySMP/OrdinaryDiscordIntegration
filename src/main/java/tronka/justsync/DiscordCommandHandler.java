@@ -39,18 +39,18 @@ public class DiscordCommandHandler extends ListenerAdapter {
 
     @Override
     public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
-        if (event.getMember() == null || event.getMember().getGuild() != integration.getGuild()) {
+        if (event.getMember() == null || event.getMember().getGuild() != this.integration.getGuild()) {
             return;
         }
         switch (event.getName()) {
             case "link" -> {
                 String code = event.getOptions().getFirst().getAsString();
-                String message = integration.getLinkManager().confirmLink(event.getUser().getIdLong(), code);
+                String message = this.integration.getLinkManager().confirmLink(event.getUser().getIdLong(), code);
                 event.reply(message).setEphemeral(true).queue();
             }
             case "list" -> {
-                Stream<String> names = integration.getServer().getPlayerManager().getPlayerList().stream()
-                    .filter(player -> !integration.getVanishIntegration().isVanished(player))
+                Stream<String> names = this.integration.getServer().getPlayerManager().getPlayerList().stream()
+                    .filter(player -> !this.integration.getVanishIntegration().isVanished(player))
                     .map(player -> player.getName().getLiteralString());
                 String message = String.join(", ", names.toList());
                 if (message.isEmpty()) {
@@ -64,7 +64,7 @@ public class DiscordCommandHandler extends ListenerAdapter {
                     event.reply("Insufficient permissions").setEphemeral(true).queue();
                     return;
                 }
-                String result = integration.tryReloadConfig();
+                String result = this.integration.tryReloadConfig();
                 if (result.isEmpty()) {
                     result = "Reloaded config!";
                 }
@@ -104,7 +104,7 @@ public class DiscordCommandHandler extends ListenerAdapter {
 
     // run with checked permissions
     private void linkingWithMember(SlashCommandInteractionEvent event, Member target) {
-        Optional<PlayerLink> dataOptional = integration.getLinkManager().getDataOf(target.getIdLong());
+        Optional<PlayerLink> dataOptional = this.integration.getLinkManager().getDataOf(target.getIdLong());
         if (dataOptional.isEmpty()) {
             event.reply(target.getAsMention() + " is not linked to any player").setEphemeral(true).queue();
             return;
@@ -120,7 +120,7 @@ public class DiscordCommandHandler extends ListenerAdapter {
             event.getHook().editOriginal(text).queue();
         } else if (Objects.equals(event.getSubcommandName(), "unlink")) {
             String message;
-            if (integration.getLinkManager().unlinkPlayer(target.getIdLong())) {
+            if (this.integration.getLinkManager().unlinkPlayer(target.getIdLong())) {
                 message = "Successfully unlinked";
             } else {
                 message = "No linked player found";
@@ -135,20 +135,20 @@ public class DiscordCommandHandler extends ListenerAdapter {
             hook.editOriginal("Could not find a player with that name").queue();
             return;
         }
-        Optional<PlayerLink> data = integration.getLinkManager().getDataOf(profile.getId());
+        Optional<PlayerLink> data = this.integration.getLinkManager().getDataOf(profile.getId());
         if (data.isEmpty()) {
             hook.editOriginal("Could not find a linked account").queue();
             return;
         }
         if (Objects.equals(subCommand, "get")) {
-            Optional<Member> member = integration.getLinkManager().getDiscordOf(data.get());
+            Optional<Member> member = this.integration.getLinkManager().getDiscordOf(data.get());
             if (member.isPresent()) {
                 hook.editOriginal(profile.getName() + " is linked to " + member.get().getAsMention()).queue();
             } else {
                 hook.editOriginal("Could not find a linked discord account").queue();
             }
         } else if (Objects.equals(subCommand, "unlink")) {
-            integration.getLinkManager().unlinkPlayer(data.get());
+            this.integration.getLinkManager().unlinkPlayer(data.get());
             hook.editOriginal("Successfully unlinked").queue();
         }
     }
