@@ -14,9 +14,6 @@ import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import net.dv8tion.jda.internal.utils.PermissionUtil;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
 import tronka.justsync.linking.PlayerData;
 import tronka.justsync.linking.PlayerLink;
 
@@ -122,22 +119,13 @@ public class DiscordCommandHandler extends ListenerAdapter {
             }
             event.getHook().editOriginal(text).queue();
         } else if (Objects.equals(event.getSubcommandName(), "unlink")) {
-            Optional<PlayerLink> playerLink = integration.getLinkManager().getDataOf(target.getIdLong());
-            if (playerLink.isPresent()) {
-                MinecraftServer server = integration.getServer();
-                ServerPlayerEntity player = server.getPlayerManager().getPlayer(playerLink.get().getPlayerId());
-                if (player != null) {
-                    player.networkHandler.disconnect(Text.of(integration.getConfig().kickMessages.kickUnlinked));
-                }
-                for (PlayerData alt : playerLink.get().getAlts()) {
-                    ServerPlayerEntity altPlayer = server.getPlayerManager().getPlayer(alt.getId());
-                    if (altPlayer != null) {
-                        altPlayer.networkHandler.disconnect(Text.of(integration.getConfig().kickMessages.kickUnlinked));
-                    }
-                }
+            String message;
+            if (integration.getLinkManager().unlinkPlayer(target.getIdLong())) {
+                message = "Successfully unlinked";
+            } else {
+                message = "No linked player found";
             }
-            integration.getLinkManager().unlinkPlayer(target.getIdLong());
-            event.reply("Successfully unlinked").setEphemeral(true).queue();
+            event.reply(message).setEphemeral(true).queue();
         }
     }
 
