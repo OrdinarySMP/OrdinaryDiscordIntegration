@@ -200,7 +200,7 @@ public class LinkManager extends ListenerAdapter {
     }
 
     public void unlinkPlayer(long id) {
-        linkData.getPlayerLink(id).ifPresent(linkData::removePlayerLink);
+        linkData.getPlayerLink(id).ifPresent(this::unlinkPlayer);
     }
 
     public void unlinkPlayer(UUID uuid) {
@@ -217,6 +217,17 @@ public class LinkManager extends ListenerAdapter {
     }
 
     public void unlinkPlayer(PlayerLink link) {
+        MinecraftServer server = integration.getServer();
+        ServerPlayerEntity player = server.getPlayerManager().getPlayer(link.getPlayerId());
+        if (player != null) {
+            player.networkHandler.disconnect(Text.of(integration.getConfig().kickMessages.kickUnlinked));
+        }
+        for (PlayerData alt : link.getAlts()) {
+            ServerPlayerEntity altPlayer = server.getPlayerManager().getPlayer(alt.getId());
+            if (altPlayer != null) {
+                altPlayer.networkHandler.disconnect(Text.of(integration.getConfig().kickMessages.kickUnlinked));
+            }
+        }
         linkData.removePlayerLink(link);
     }
 
