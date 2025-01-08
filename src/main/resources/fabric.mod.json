@@ -1,21 +1,21 @@
 {
   "schemaVersion": 1,
-  "id": "ordinarydiscordintegration",
+  "id": "discordjustsync",
   "version": "${version}",
-  "name": "OrdinaryDiscordIntegration",
+  "name": "Discord: JustSync",
   "description": "",
   "authors": [],
   "contact": {},
   "license": "All-Rights-Reserved",
-  "icon": "assets/ordinarydiscordintegration/icon.png",
+  "icon": "assets/justsync/icon.png",
   "environment": "*",
   "entrypoints": {
     "server": [
-      "tronka.ordinarydiscordintegration.OrdinaryDiscordIntegration"
+      "tronka.justsync.JustSyncApplication"
     ]
   },
   "mixins": [
-    "ordinarydiscordintegration.mixins.json"
+    "justsync.mixins.json"
   ],
   "depends": {
     "fabricloader": ">=${loader_version}",
