@@ -59,7 +59,7 @@ public class ChatBridge extends ListenerAdapter {
                 }
             })).queue();
         }
-        this.updateRichPresence(0);
+        this.updateRichPresence(0, true);
     }
 
     private void setWebhook(Webhook webhook) {
@@ -112,7 +112,7 @@ public class ChatBridge extends ListenerAdapter {
     public void onPlayerJoin(ServerPlayerEntity player) {
         sendMessageToDiscord(
             integration.getConfig().messages.playerJoinMessage.replace("%user%", player.getName().getString()), null);
-        updateRichPresence(1);
+        updateRichPresence(1, false);
     }
 
     public void onPlayerLeave(ServerPlayerEntity player) {
@@ -122,15 +122,20 @@ public class ChatBridge extends ListenerAdapter {
 
         sendMessageToDiscord(
             integration.getConfig().messages.playerLeaveMessage.replace("%user%", player.getName().getString()), null);
-        updateRichPresence(-1);
+        updateRichPresence(-1, false);
     }
 
-    private void updateRichPresence(int modifier) {
+    private void updateRichPresence(int modifier, boolean initial) {
         if (!integration.getConfig().showPlayerCountStatus) {
             return;
         }
-        long playerCount = integration.getServer().getPlayerManager().getPlayerList().stream()
-            .filter(p -> !integration.getVanishIntegration().isVanished(p)).count() + modifier;
+        long playerCount;
+        if (initial) {
+            playerCount = 0;
+        } else {
+            playerCount = integration.getServer().getPlayerManager().getPlayerList().stream()
+                .filter(p -> !integration.getVanishIntegration().isVanished(p)).count() + modifier;
+        }
         integration.getJda().getPresence().setPresence(Activity.playing(switch ((int) playerCount) {
             case 0 -> integration.getConfig().messages.onlineCountZero;
             case 1 -> integration.getConfig().messages.onlineCountSingular;
