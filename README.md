@@ -40,13 +40,14 @@ For this to work the `manage roles` permission is required.
 ## Commands
 ### Minecraft
 - `/discord reload` reload the configs
-- `/discord unlink <player>` remove a link from a discord user to a minecraft account
+- `/discord unlink` remove the link of your minecraft account
+- `/discord unlink <player>` remove a link from a discord user to a minecraft account (op required)
 ### Discord
 - `/link <code>` used to link to your minecraft account
 - `/linking get` query link data for yourself
-- `/linking get <player>` query link data for other players (admin only) 
+- `/linking get <player>` query link data for other players (moderate member permission required) 
 - `/linking unlink` unlink yourself
-- `/linking unlink <player>` unlink a player (admin only)
+- `/linking unlink <player>` unlink a player (moderate members permission required)
 - `/list` List the currently online players
 - `/reload` reload the config file (admin only)
 ### Console
@@ -55,6 +56,13 @@ These commands can be run by any admin or user with the `commands.opRole`.
 Commands can only be run from the `commands.consoleChannel`.
 By default, there are these 4 commands: `stop`, `kill`, `kick`, `ban` but you can configure more of remove them.
 The default command prefix is `//` so you can for example type `//kick Notch` to kick Notch from the minecraft server.
+
+## Integrations
+### [Vanish](https://modrinth.com/mod/vanish)
+This mod has an integration for melius's vanish mod, so that this mod does not reveal vanished players.
+
+### [Luck Perms](https://modrinth.com/plugin/luckperms)
+This mod can add alt accounts to a luckperms group
 
 ## Problems and Suggestions
 If you encounter any problems or bugs or have a suggestion for this mod feel free to open an Issue on our GitHub repository.
