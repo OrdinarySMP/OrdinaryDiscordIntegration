@@ -43,13 +43,13 @@ jobs:
       pull-requests: write
       id-token: write
     outputs:
-      version: ${{ steps.semantic-release.outputs.new_release_version }}
+      version: ${{ steps.semantic-release-dry.outputs.new_release_version }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Semantic Release
         uses: cycjimmy/semantic-release-action@v4
-        id: semantic-release
+        id: semantic-release-dry
         with:
           dry_run: true
         env:
@@ -111,6 +111,7 @@ jobs:
           }' > .releaserc
       - name: Semantic Release
         uses: cycjimmy/semantic-release-action@v4
+        id: semantic-release
         with:
           extra_plugins: |
             @semantic-release/git
