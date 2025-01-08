@@ -55,7 +55,7 @@ public class JustSyncApplication extends ListenerAdapter implements DedicatedSer
     public void onInitializeServer() {
         instance = this;
         if (config.botToken == null || config.botToken.length() < 20) {
-            throw new RuntimeException("Please enter a valid bot token in the Discord-JS config file");
+            throw new RuntimeException("Please enter a valid bot token in the Discord-JS config file in " + getConfigFolder().toAbsolutePath());
         }
         ServerLifecycleEvents.SERVER_STARTING.register(s -> server = s);
         ServerLifecycleEvents.SERVER_STOPPED.register(this::onServerStopped);
@@ -154,7 +154,7 @@ public class JustSyncApplication extends ListenerAdapter implements DedicatedSer
         Config newConfig = Config.loadConfig();
         TextChannel serverChatChannel = Utils.getTextChannel(jda, newConfig.serverChatChannel);
         if (serverChatChannel == null) {
-            return "Fail to load config: Please enter a valid serverChatChannelId";
+            return "Fail to load config: Please enter a valid serverChatChannelId in the config file in " + getConfigFolder().toAbsolutePath();
         }
 
         guild = serverChatChannel.getGuild();
