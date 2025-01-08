@@ -46,18 +46,18 @@ public class Config {
     public static Config loadConfig() {
         Path configDir = JustSyncApplication.getConfigFolder();
         File configFile = configDir.resolve(JustSyncApplication.ModId + ".toml").toFile();
+        Config instance;
         if (configFile.exists()) {
-            return new Toml().read(configFile).to(Config.class);
+            instance = new Toml().read(configFile).to(Config.class);
         } else {
-            Config config = new Config();
-            try {
-                Files.createDirectories(configDir);
-                new TomlWriter().write(config, configFile);
-            } catch (IOException ignored) {
-            }
-            return config;
+            instance = new Config();
         }
-
+        try {
+            Files.createDirectories(configDir);
+            new TomlWriter().write(instance, configFile);
+        } catch (IOException ignored) {
+        }
+        return instance;
     }
 
     public static class LinkingOptions {
