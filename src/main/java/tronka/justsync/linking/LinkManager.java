@@ -199,34 +199,31 @@ public class LinkManager extends ListenerAdapter {
         }
     }
 
-    public void unlinkPlayer(long id) {
-        linkData.getPlayerLink(id).ifPresent(this::unlinkPlayer);
+    public boolean unlinkPlayer(long id) {
+        Optional<PlayerLink> dataOptional = linkData.getPlayerLink(id);
+        dataOptional.ifPresent(this::unlinkPlayer);
+        return dataOptional.isPresent();
     }
 
-    public void unlinkPlayer(UUID uuid) {
+    public boolean unlinkPlayer(UUID uuid) {
         Optional<PlayerLink> dataOptional = linkData.getPlayerLink(uuid);
         if (dataOptional.isEmpty()) {
-            return;
+            return false;
         }
         PlayerLink data = dataOptional.get();
         if (data.getPlayerId().equals(uuid)) {
             linkData.removePlayerLink(data);
         } else {
+            this.tryKickPlayer(uuid, integration.getConfig().kickMessages.kickUnlinked);
             data.removeAlt(uuid);
         }
+        return true;
     }
 
     public void unlinkPlayer(PlayerLink link) {
-        MinecraftServer server = integration.getServer();
-        ServerPlayerEntity player = server.getPlayerManager().getPlayer(link.getPlayerId());
-        if (player != null) {
-            player.networkHandler.disconnect(Text.of(integration.getConfig().kickMessages.kickUnlinked));
-        }
+        this.tryKickPlayer(link.getPlayerId(), integration.getConfig().kickMessages.kickUnlinked);
         for (PlayerData alt : link.getAlts()) {
-            ServerPlayerEntity altPlayer = server.getPlayerManager().getPlayer(alt.getId());
-            if (altPlayer != null) {
-                altPlayer.networkHandler.disconnect(Text.of(integration.getConfig().kickMessages.kickUnlinked));
-            }
+            this.tryKickPlayer(alt.getId(), integration.getConfig().kickMessages.kickUnlinked);
         }
         linkData.removePlayerLink(link);
     }
@@ -239,8 +236,9 @@ public class LinkManager extends ListenerAdapter {
         }
 
         kickAccounts(member, integration.getConfig().kickMessages.kickOnLeave);
-        unlinkPlayer(member.getIdLong());
-        LOGGER.info("Removed link of \"{}\" because they left the guild.", member.getEffectiveName());
+        if(unlinkPlayer(member.getIdLong())) {
+            LOGGER.info("Removed link of \"{}\" because they left the guild.", member.getEffectiveName());
+        }
     }
 
     public void kickAccounts(Member member, String reason) {
@@ -248,17 +246,18 @@ public class LinkManager extends ListenerAdapter {
         if (playerLink.isEmpty()) {
             return;
         }
+
+        this.tryKickPlayer(playerLink.get().getPlayerId(), reason);
+        for (PlayerData alt : playerLink.get().getAlts()) {
+            this.tryKickPlayer(alt.getId(), reason);
+        }
+    }
+
+    private void tryKickPlayer(UUID uuid, String reason) {
         MinecraftServer server = integration.getServer();
-        ServerPlayerEntity player = server.getPlayerManager().getPlayer(playerLink.get().getPlayerId());
+        ServerPlayerEntity player = server.getPlayerManager().getPlayer(uuid);
         if (player != null) {
             player.networkHandler.disconnect(Text.of(reason));
-        }
-
-        for (PlayerData alt : playerLink.get().getAlts()) {
-            ServerPlayerEntity altPlayer = server.getPlayerManager().getPlayer(alt.getId());
-            if (altPlayer != null) {
-                altPlayer.networkHandler.disconnect(Text.of(reason));
-            }
         }
     }
 }

@@ -28,10 +28,6 @@ public class InGameDiscordCommand {
                 if (player != null) {
                     integration.getLinkManager().unlinkPlayer(player.getUuid());
                     context.getSource().sendFeedback(() -> Text.literal("Unlinked!"), false);
-                    if (integration.getConfig().linking.enableLinking) {
-                        player.networkHandler.disconnect(
-                            Text.literal(integration.getConfig().kickMessages.kickUnlinked));
-                    }
                 } else {
                     context.getSource().sendFeedback(() -> Text.literal("Player Only!"), false);
                 }
@@ -39,22 +35,12 @@ public class InGameDiscordCommand {
             }).then(CommandManager.argument("player", GameProfileArgumentType.gameProfile())
                 .requires(source -> source.hasPermissionLevel(2)).executes(context -> {
                     Collection<GameProfile> profiles = GameProfileArgumentType.getProfileArgument(context, "player");
-                    int kickedCount = 0;
+
                     for (GameProfile profile : profiles) {
                         integration.getLinkManager().unlinkPlayer(profile.getId());
-                        ServerPlayerEntity player = context.getSource().getServer().getPlayerManager()
-                            .getPlayer(profile.getId());
-                        if (player != null) {
-                            if (integration.getConfig().linking.enableLinking) {
-                                player.networkHandler.disconnect(
-                                    Text.literal(integration.getConfig().kickMessages.kickUnlinked));
-                            }
-                            kickedCount++;
-                        }
                     }
-                    int finalKickedCount = kickedCount;
                     context.getSource().sendFeedback(() -> Text.literal(
-                            "Successfully unlinked %d player and kicked %d".formatted(profiles.size(), finalKickedCount)),
+                            "Successfully unlinked %d player(s)".formatted(profiles.size())),
                         false);
                     return 1;
                 }))).then(

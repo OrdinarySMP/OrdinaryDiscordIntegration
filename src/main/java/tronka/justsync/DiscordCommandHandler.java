@@ -119,8 +119,13 @@ public class DiscordCommandHandler extends ListenerAdapter {
             }
             event.getHook().editOriginal(text).queue();
         } else if (Objects.equals(event.getSubcommandName(), "unlink")) {
-            integration.getLinkManager().unlinkPlayer(target.getIdLong());
-            event.reply("Successfully unlinked").setEphemeral(true).queue();
+            String message;
+            if (integration.getLinkManager().unlinkPlayer(target.getIdLong())) {
+                message = "Successfully unlinked";
+            } else {
+                message = "No linked player found";
+            }
+            event.reply(message).setEphemeral(true).queue();
         }
     }
 
