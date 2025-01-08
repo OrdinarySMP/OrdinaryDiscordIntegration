@@ -166,7 +166,7 @@ public class ChatBridge extends ListenerAdapter {
 
     private void onMcChatMessage(SignedMessage signedMessage, ServerPlayerEntity player,
         MessageType.Parameters parameters) {
-        String message = signedMessage.getContent().getLiteralString();
+        String message = signedMessage.getContent().getString();
         sendMessageToDiscord(message, player);
     }
 
