@@ -146,6 +146,9 @@ public class ChatBridge extends ListenerAdapter {
     public void onPlayerDeath(ServerPlayerEntity player, DamageSource source) {
         if (integration.getConfig().broadCastDeathMessages) {
             String message = source.getDeathMessage(player).getString();
+            if (message.equals("death.attack.badRespawnPoint")) {
+                message = "%s was killed by [Intentional Mod Design]".formatted(player.getName().getString());
+            }
             sendMessageToDiscord(message, null);
         }
     }
