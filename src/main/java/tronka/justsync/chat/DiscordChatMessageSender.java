@@ -102,7 +102,7 @@ public class DiscordChatMessageSender {
 
     private String getMessage() {
         if (this.sender != null) {
-            return this.sender.getName() + ": " + this.cleanedMessage();
+            return this.sender.getName().getLiteralString() + ": " + this.cleanedMessage();
         }
         return this.cleanedMessage();
     }
