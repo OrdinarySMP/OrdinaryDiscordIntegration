@@ -41,21 +41,21 @@ public class ChatBridge extends ListenerAdapter {
         ServerMessageEvents.CHAT_MESSAGE.register(this::onMcChatMessage);
         ServerLifecycleEvents.SERVER_STOPPING.register(this::onServerStopping);
         integration.registerConfigReloadHandler(this::onConfigLoaded);
-        channel.sendMessage(integration.getConfig().messages.startMessage).queue();
+        this.channel.sendMessage(integration.getConfig().messages.startMessage).queue();
     }
 
     private void onConfigLoaded(Config config) {
-        channel = Utils.getTextChannel(integration.getJda(), config.serverChatChannel);
+        this.channel = Utils.getTextChannel(this.integration.getJda(), config.serverChatChannel);
         this.messageSender = null;
         setWebhook(null);
-        if (integration.getConfig().useWebHooks) {
-            channel.retrieveWebhooks().onSuccess((webhooks -> {
+        if (this.integration.getConfig().useWebHooks) {
+            this.channel.retrieveWebhooks().onSuccess((webhooks -> {
                 Optional<Webhook> hook = webhooks.stream()
                     .filter(w -> w.getOwner() == this.integration.getGuild().getSelfMember()).findFirst();
                 if (hook.isPresent()) {
                     setWebhook(hook.get());
                 } else {
-                    channel.createWebhook(webhookId).onSuccess(this::setWebhook).queue();
+                    this.channel.createWebhook(webhookId).onSuccess(this::setWebhook).queue();
                 }
             })).queue();
         }
@@ -63,19 +63,19 @@ public class ChatBridge extends ListenerAdapter {
     }
 
     private void setWebhook(Webhook webhook) {
-        if (webhookClient != null) {
-            webhookClient.close();
-            webhookClient = null;
+        if (this.webhookClient != null) {
+            this.webhookClient.close();
+            this.webhookClient = null;
         }
         if (webhook != null) {
-            webhookClient = JDAWebhookClient.from(webhook);
+            this.webhookClient = JDAWebhookClient.from(webhook);
         }
     }
 
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
         // discord message
-        if (event.getChannel() != channel) {
+        if (event.getChannel() != this.channel) {
             return;
         }
         if (event.getMember() == null || event.getAuthor().isBot()) {
@@ -84,8 +84,8 @@ public class ChatBridge extends ListenerAdapter {
 
         Message repliedMessage = event.getMessage().getReferencedMessage();
 
-        String baseText = repliedMessage == null ? integration.getConfig().messages.chatMessageFormat
-            : integration.getConfig().messages.chatMessageFormatReply;
+        String baseText = repliedMessage == null ? this.integration.getConfig().messages.chatMessageFormat
+            : this.integration.getConfig().messages.chatMessageFormatReply;
 
         TextNode attachmentInfo;
         if (!event.getMessage().getAttachments().isEmpty()) {
@@ -93,7 +93,7 @@ public class ChatBridge extends ListenerAdapter {
             for (Message.Attachment attachment : event.getMessage().getAttachments()) {
                 attachments.add(
                     TextReplacer.create().replace("link", attachment.getUrl()).replace("name", attachment.getFileName())
-                        .applyNode(integration.getConfig().messages.attachmentFormat));
+                        .applyNode(this.integration.getConfig().messages.attachmentFormat));
             }
             attachmentInfo = TextNode.wrap(attachments);
         } else {
@@ -104,47 +104,47 @@ public class ChatBridge extends ListenerAdapter {
             : (repliedMessage.getMember() == null ? repliedMessage.getAuthor().getEffectiveName()
                 : repliedMessage.getMember().getEffectiveName());
         sendMcChatMessage(TextReplacer.create()
-            .replace("msg", Utils.parseUrls(event.getMessage().getContentDisplay(), integration.getConfig()))
+            .replace("msg", Utils.parseUrls(event.getMessage().getContentDisplay(), this.integration.getConfig()))
             .replace("user", event.getMember().getEffectiveName()).replace("userRepliedTo", replyUser)
             .replace("attachments", attachmentInfo).apply(baseText));
     }
 
     public void onPlayerJoin(ServerPlayerEntity player) {
         sendMessageToDiscord(
-            integration.getConfig().messages.playerJoinMessage.replace("%user%", player.getName().getString()), null);
+                this.integration.getConfig().messages.playerJoinMessage.replace("%user%", player.getName().getString()), null);
         updateRichPresence(1, false);
     }
 
     public void onPlayerLeave(ServerPlayerEntity player) {
-        if (stopped) {
+        if (this.stopped) {
             return;
         }
 
         sendMessageToDiscord(
-            integration.getConfig().messages.playerLeaveMessage.replace("%user%", player.getName().getString()), null);
+                this.integration.getConfig().messages.playerLeaveMessage.replace("%user%", player.getName().getString()), null);
         updateRichPresence(-1, false);
     }
 
     private void updateRichPresence(int modifier, boolean initial) {
-        if (!integration.getConfig().showPlayerCountStatus) {
+        if (!this.integration.getConfig().showPlayerCountStatus) {
             return;
         }
         long playerCount;
         if (initial) {
             playerCount = 0;
         } else {
-            playerCount = integration.getServer().getPlayerManager().getPlayerList().stream()
-                .filter(p -> !integration.getVanishIntegration().isVanished(p)).count() + modifier;
+            playerCount = this.integration.getServer().getPlayerManager().getPlayerList().stream()
+                .filter(p -> !this.integration.getVanishIntegration().isVanished(p)).count() + modifier;
         }
-        integration.getJda().getPresence().setPresence(Activity.playing(switch ((int) playerCount) {
-            case 0 -> integration.getConfig().messages.onlineCountZero;
-            case 1 -> integration.getConfig().messages.onlineCountSingular;
-            default -> integration.getConfig().messages.onlineCountPlural.formatted(playerCount);
+        this.integration.getJda().getPresence().setPresence(Activity.playing(switch ((int) playerCount) {
+            case 0 -> this.integration.getConfig().messages.onlineCountZero;
+            case 1 -> this.integration.getConfig().messages.onlineCountSingular;
+            default -> this.integration.getConfig().messages.onlineCountPlural.formatted(playerCount);
         }), false);
     }
 
     public void onPlayerDeath(ServerPlayerEntity player, DamageSource source) {
-        if (integration.getConfig().broadCastDeathMessages) {
+        if (this.integration.getConfig().broadCastDeathMessages) {
             String message = source.getDeathMessage(player).getString();
             if (message.equals("death.attack.badRespawnPoint")) {
                 message = "%s was killed by [Intentional Mod Design]".formatted(player.getName().getString());
@@ -154,21 +154,21 @@ public class ChatBridge extends ListenerAdapter {
     }
 
     public void onReceiveAdvancement(ServerPlayerEntity player, AdvancementDisplay advancement) {
-        if (integration.getConfig().announceAdvancements && advancement.shouldAnnounceToChat()) {
+        if (this.integration.getConfig().announceAdvancements && advancement.shouldAnnounceToChat()) {
             sendMessageToDiscord(
-                integration.getConfig().messages.advancementMessage.replace("%user%", player.getName().getString())
+                    this.integration.getConfig().messages.advancementMessage.replace("%user%", player.getName().getString())
                     .replace("%title%", advancement.getTitle().getString())
                     .replace("%description%", advancement.getDescription().getString()), null);
         }
     }
 
     public void sendMcChatMessage(Text message) {
-        integration.getServer().getPlayerManager().broadcast(message, false);
+        this.integration.getServer().getPlayerManager().broadcast(message, false);
     }
 
     private void onServerStopping(MinecraftServer minecraftServer) {
-        sendMessageToDiscord(integration.getConfig().messages.stopMessage, null);
-        stopped = true;
+        sendMessageToDiscord(this.integration.getConfig().messages.stopMessage, null);
+        this.stopped = true;
     }
 
 

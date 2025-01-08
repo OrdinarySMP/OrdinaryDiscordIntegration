@@ -95,7 +95,7 @@ public class DiscordChatMessageSender {
     }
 
     private String cleanedMessage() {
-        return message.replace("@everyone", "@ everyone")
+        return this.message.replace("@everyone", "@ everyone")
             .replace("@here", "@ here")
             .replaceAll("<@&\\d+>", "@role-ping");
     }
@@ -132,8 +132,8 @@ public class DiscordChatMessageSender {
     }
 
     private void sendAsWebhook() {
-        String avatarUrl = getAvatarUrl(sender);
-        WebhookMessage msg = new WebhookMessageBuilder().setUsername(sender.getName().getLiteralString())
+        String avatarUrl = getAvatarUrl(this.sender);
+        WebhookMessage msg = new WebhookMessageBuilder().setUsername(this.sender.getName().getLiteralString())
             .setAvatarUrl(avatarUrl).setContent(this.cleanedMessage()).build();
         this.readyFuture = this.webhookClient.send(msg).thenApply(ReadonlyMessage::getId)
             .thenAccept(this::updateMessage).exceptionally(this::handleFailure);
@@ -141,7 +141,7 @@ public class DiscordChatMessageSender {
     }
 
     private void editAsWebhook(String message) {
-        this.webhookClient.edit(messageId, message).exceptionally(this::handleFailure);
+        this.webhookClient.edit(this.messageId, message).exceptionally(this::handleFailure);
     }
 
     private <T> T handleFailure(Throwable t) {

@@ -24,7 +24,7 @@ public class AdvancementMixin {
 
         if (advancement != null && advancement.display().isPresent() && advancement.display().get()
             .shouldAnnounceToChat()) {
-            JustSyncApplication.getInstance().getChatBridge().onReceiveAdvancement(owner, advancement.display().get());
+            JustSyncApplication.getInstance().getChatBridge().onReceiveAdvancement(this.owner, advancement.display().get());
         }
     }
 }
