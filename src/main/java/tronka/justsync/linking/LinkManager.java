@@ -193,7 +193,7 @@ public class LinkManager extends ListenerAdapter {
         Set<Long> memberSet = members.stream().map(Member::getIdLong).collect(Collectors.toSet());
         List<PlayerLink> toRemove = this.linkData.getPlayerLinks().filter(link -> !memberSet.contains(link.getDiscordId()))
             .toList();
-        toRemove.forEach(this.linkData::removePlayerLink);
+        toRemove.forEach(this::unlinkPlayer);
         if (!toRemove.isEmpty()) {
             LOGGER.info("Purged {} linked players", toRemove.size());
         }
@@ -212,7 +212,7 @@ public class LinkManager extends ListenerAdapter {
         }
         PlayerLink data = dataOptional.get();
         if (data.getPlayerId().equals(uuid)) {
-            this.linkData.removePlayerLink(data);
+            this.unlinkPlayer(data);
         } else {
             this.tryKickPlayer(uuid, this.integration.getConfig().kickMessages.kickUnlinked);
             data.removeAlt(uuid);
