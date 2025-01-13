@@ -106,4 +106,4 @@ jobs:
             fabric
           game-versions: |-
             ${{ env.MINECRAFT_VERSION }}
-          files: build/libs/AltX-fabric-${{ steps.semantic-release.outputs.new_release_version }}.jar
+          files: build/libs/DiscordJustSync-${{ steps.semantic-release.outputs.new_release_version }}.jar
