@@ -1,0 +1,109 @@
+name: Release
+
+on: workflow_dispatch
+
+permissions:
+  contents: read # for checkout
+
+jobs:
+  release-dry:
+    name: Release Dry Run
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      id-token: write
+    outputs:
+      version: ${{ steps.semantic-release-dry.outputs.new_release_version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Semantic Release
+        uses: cycjimmy/semantic-release-action@v4
+        id: semantic-release-dry
+        with:
+          dry_run: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build:
+    needs: [release-dry]
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v4
+      - name: validate gradle wrapper
+        uses: gradle/actions/wrapper-validation@v4
+      - name: setup jdk 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: 'microsoft'
+      - name: make gradle wrapper executable
+        run: chmod +x ./gradlew
+      - name: build
+        run: ./gradlew build -Pversion=${{ needs.release-dry.outputs.version }}
+      - name: capture build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Artifacts
+          path: build/libs/
+
+  release:
+    name: Release
+    needs: [build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: Artifacts
+          path: build/libs/
+      - name: Create .releaserc file
+        run: |
+          echo '{
+          "plugins": [
+            "@semantic-release/commit-analyzer",
+            "@semantic-release/release-notes-generator",
+            ["@semantic-release/github", {
+              "assets": [
+                {"path": "build/libs/*[!plain].jar"}
+              ]
+            }]
+            ]
+          }' > .releaserc
+      - name: Semantic Release
+        uses: cycjimmy/semantic-release-action@v4
+        id: semantic-release
+        with:
+          extra_plugins: |
+            @semantic-release/git
+            @semantic-release/github
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN  }}
+      - name: Extract Minecraft version
+        run: |
+          minecraft_version=$(grep "^minecraft_version=" "gradle.properties" | cut -d'=' -f2)
+          echo "MINECRAFT_VERSION=$minecraft_version" >> $GITHUB_ENV
+      - name: Upload to Modrinth
+        if: steps.semantic-release.outputs.new_release_version != ''
+        uses: cloudnode-pro/modrinth-publish@2.0.0
+        with:
+          token: ${{ secrets.MODRINTH_TOKEN }}
+          project: ${{ secrets.MODRINTH_PROJECT_ID }}
+          name: v${{ steps.semantic-release.outputs.new_release_version }}
+          version: ${{ steps.semantic-release.outputs.new_release_version }}
+          changelog: ${{ steps.semantic-release.outputs.new_release_notes }}
+          loaders: |-
+            fabric
+          game-versions: |-
+            ${{ env.MINECRAFT_VERSION }}
+          files: build/libs/AltX-fabric-${{ steps.semantic-release.outputs.new_release_version }}.jar
