@@ -1,10 +1,11 @@
 package tronka.justsync;
 
+import java.util.Collection;
+
 import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.CommandDispatcher;
 
-import java.util.Collection;
-
+import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.command.argument.GameProfileArgumentType;
@@ -12,8 +13,6 @@ import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
-
-import me.lucko.fabric.api.permissions.v0.Permissions;
 
 public class InGameDiscordCommand {
 
@@ -27,7 +26,7 @@ public class InGameDiscordCommand {
     private void register(CommandDispatcher<ServerCommandSource> dispatcher, CommandRegistryAccess registry,
         CommandManager.RegistrationEnvironment environment) {
         dispatcher.register(
-            CommandManager.literal("discord").then(CommandManager.literal("unlink").requires(Permissions.require("justsync.unlink", 4)).executes(context -> {
+            CommandManager.literal("discord").then(CommandManager.literal("unlink").requires(Permissions.require("justsync.unlink", true)).executes(context -> {
                 ServerPlayerEntity player = context.getSource().getPlayer();
                 if (player != null) {
                     this.integration.getLinkManager().unlinkPlayer(player.getUuid());
