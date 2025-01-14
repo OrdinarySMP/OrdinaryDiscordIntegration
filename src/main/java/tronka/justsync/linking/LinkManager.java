@@ -150,8 +150,10 @@ public class LinkManager extends ListenerAdapter {
             }
             link.addAlt(PlayerData.from(linkRequest.get()));
             this.integration.getLuckPermsIntegration().setAlt(linkRequest.get().getPlayerId());
+            this.integration.getDiscordLogger().onLinkAlt(linkRequest.get().getPlayerId());
         } else {
             this.linkData.addPlayerLink(new PlayerLink(linkRequest.get(), discordId));
+            this.integration.getDiscordLogger().onLinkMain(linkRequest.get().getPlayerId());
         }
         return this.integration.getConfig().linkResults.linkSuccess.replace("%name%", linkRequest.get().getName());
     }
@@ -215,6 +217,7 @@ public class LinkManager extends ListenerAdapter {
             this.unlinkPlayer(data);
         } else {
             this.tryKickPlayer(uuid, this.integration.getConfig().kickMessages.kickUnlinked);
+            this.integration.getDiscordLogger().onUnlinkAlt(uuid);
             data.removeAlt(uuid);
         }
         return true;
@@ -225,6 +228,7 @@ public class LinkManager extends ListenerAdapter {
         for (PlayerData alt : link.getAlts()) {
             this.tryKickPlayer(alt.getId(), this.integration.getConfig().kickMessages.kickUnlinked);
         }
+        this.integration.getDiscordLogger().onUnlink(link);
         this.linkData.removePlayerLink(link);
     }
 

@@ -42,6 +42,7 @@ public class JustSyncApplication extends ListenerAdapter implements DedicatedSer
     private LuckPermsIntegration luckPermsIntegration;
     private VanishIntegration vanishIntegration;
     private TimeoutManager timeoutManager;
+    private DiscordLogger discordLogger;
 
     public static JustSyncApplication getInstance() {
         return instance;
@@ -85,6 +86,7 @@ public class JustSyncApplication extends ListenerAdapter implements DedicatedSer
         this.jda.addEventListener(this.consoleBridge = new ConsoleBridge(this));
         this.jda.addEventListener(this.linkManager = new LinkManager(this));
         this.jda.addEventListener(this.timeoutManager = new TimeoutManager(this));
+        this.discordLogger = new DiscordLogger(this);
         this.luckPermsIntegration = new LuckPermsIntegration(this);
         this.vanishIntegration = new VanishIntegration(this);
         registerConfigReloadHandler(this::onConfigReloaded);
@@ -147,6 +149,10 @@ public class JustSyncApplication extends ListenerAdapter implements DedicatedSer
 
     public TimeoutManager getTimeoutManager() {
         return this.timeoutManager;
+    }
+
+    public DiscordLogger getDiscordLogger() {
+        return this.discordLogger;
     }
 
     public String tryReloadConfig() {
