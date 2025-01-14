@@ -66,6 +66,10 @@ public class Config {
         public boolean enableLinking = true;
         @TomlComment("Should players be unlinked from their discord account if they leave the discord server")
         public boolean unlinkOnLeave = true;
+        @TomlComment("Should linking and unlinking be logged to a discord channel")
+        public boolean logLinking = false;
+        @TomlComment("channel in which linking/unlinking should be logged (only if logLinking set to true)")
+        public String linkingLogChannel = "";
         @TomlComment("What roles a player must have on discord to join the minecraft server")
         public List<String> requiredRoles = new ArrayList<>();
         @TomlComment("What roles should be assigned to a players discord account when they join")
