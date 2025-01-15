@@ -72,21 +72,30 @@ public class Utils {
 
     public static GameProfile fetchProfile(String name) {
         try {
-            URL url = URI.create("https://api.mojang.com/users/profiles/minecraft/" + name).toURL();
-            URLConnection connection = url.openConnection();
-            connection.addRequestProperty("User-Agent", "DiscordJS");
-            connection.addRequestProperty("Accept", "application/json");
-            connection.connect();
-            BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-            String data = reader.lines().collect(Collectors.joining());
-            // fix uuid format
-            String fixed = data.replaceFirst(
-                "\"(\\p{XDigit}{8})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}+)\"", "$1-$2-$3-$4-$5");
-            return gson.fromJson(fixed, GameProfile.class);
-        } catch (IOException e) {
-
+            return fetchProfileData("https://api.mojang.com/users/profiles/minecraft/" + name);
+        } catch (IOException ignored) {}
+        try {
+            return fetchProfileData("https://api.minetools.eu/uuid/" + name);
+        } catch (IOException e){
             return null;
         }
+    }
+
+    private static GameProfile fetchProfileData(String urlLink) throws IOException {
+        URL url = URI.create(urlLink).toURL();
+        URLConnection connection = url.openConnection();
+        connection.addRequestProperty("User-Agent", "DiscordJS");
+        connection.addRequestProperty("Accept", "application/json");
+        connection.connect();
+        BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+        String data = reader.lines().collect(Collectors.joining());
+        if (data.endsWith("\"ERR\"}")) {
+            return null;
+        }
+        // fix uuid format
+        String fixed = data.replaceFirst(
+            "\"(\\p{XDigit}{8})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}+)\"", "$1-$2-$3-$4-$5");
+        return gson.fromJson(fixed, GameProfile.class);
     }
 
     public static boolean startsWithAny(String string, List<String> starts) {
