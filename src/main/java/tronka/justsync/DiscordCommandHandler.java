@@ -3,6 +3,7 @@ package tronka.justsync;
 import com.mojang.authlib.GameProfile;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Stream;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
@@ -135,6 +136,7 @@ public class DiscordCommandHandler extends ListenerAdapter {
             hook.editOriginal("Could not find a player with that name").queue();
             return;
         }
+        String minecraftName = profile.getName();
         Optional<PlayerLink> data = this.integration.getLinkManager().getDataOf(profile.getId());
         if (data.isEmpty()) {
             hook.editOriginal("Could not find a linked account").queue();
@@ -148,7 +150,17 @@ public class DiscordCommandHandler extends ListenerAdapter {
                 hook.editOriginal("Could not find a linked discord account").queue();
             }
         } else if (Objects.equals(subCommand, "unlink")) {
-            this.integration.getLinkManager().unlinkPlayer(data.get());
+            if (data.get().getPlayerName().equalsIgnoreCase(minecraftName)) {
+                this.integration.getLinkManager().unlinkPlayer(data.get());
+            } else {
+                UUID altUuid = data.get().getAlts().stream()
+                    .filter((alt) -> alt.getName().equalsIgnoreCase(minecraftName))
+                    .findFirst().get().getId();
+                this.integration.getLinkManager()
+                    .tryKickPlayer(altUuid, this.integration.getConfig().kickMessages.kickUnlinked);
+                this.integration.getDiscordLogger().onUnlinkAlt(altUuid);
+                data.get().removeAlt(altUuid);
+            }
             hook.editOriginal("Successfully unlinked").queue();
         }
     }

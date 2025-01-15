@@ -257,7 +257,7 @@ public class LinkManager extends ListenerAdapter {
         }
     }
 
-    private void tryKickPlayer(UUID uuid, String reason) {
+    public void tryKickPlayer(UUID uuid, String reason) {
         MinecraftServer server = this.integration.getServer();
         ServerPlayerEntity player = server.getPlayerManager().getPlayer(uuid);
         if (player != null) {
