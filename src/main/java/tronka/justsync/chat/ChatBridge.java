@@ -110,8 +110,8 @@ public class ChatBridge extends ListenerAdapter {
     }
 
     public void onPlayerJoin(ServerPlayerEntity player) {
-        sendMessageToDiscord(
-                this.integration.getConfig().messages.playerJoinMessage.replace("%user%", player.getName().getString()), null);
+        sendMessageToDiscord(this.integration.getConfig().messages.playerJoinMessage.replace("%user%",
+            Utils.escapeUnderscores(player.getName().getString())), null);
         updateRichPresence(1, false);
     }
 
@@ -120,8 +120,8 @@ public class ChatBridge extends ListenerAdapter {
             return;
         }
 
-        sendMessageToDiscord(
-                this.integration.getConfig().messages.playerLeaveMessage.replace("%user%", player.getName().getString()), null);
+        sendMessageToDiscord(this.integration.getConfig().messages.playerLeaveMessage.replace("%user%",
+            Utils.escapeUnderscores(player.getName().getString())), null);
         updateRichPresence(-1, false);
     }
 
@@ -149,16 +149,16 @@ public class ChatBridge extends ListenerAdapter {
             if (message.equals("death.attack.badRespawnPoint")) {
                 message = "%s was killed by [Intentional Mod Design]".formatted(player.getName().getString());
             }
-            sendMessageToDiscord(message, null);
+            sendMessageToDiscord(Utils.escapeUnderscores(message), null);
         }
     }
 
     public void onReceiveAdvancement(ServerPlayerEntity player, AdvancementDisplay advancement) {
         if (this.integration.getConfig().announceAdvancements && advancement.shouldAnnounceToChat()) {
-            sendMessageToDiscord(
-                    this.integration.getConfig().messages.advancementMessage.replace("%user%", player.getName().getString())
-                    .replace("%title%", advancement.getTitle().getString())
-                    .replace("%description%", advancement.getDescription().getString()), null);
+            sendMessageToDiscord(this.integration.getConfig().messages.advancementMessage.replace("%user%",
+                    Utils.escapeUnderscores(player.getName().getString()))
+                .replace("%title%", advancement.getTitle().getString())
+                .replace("%description%", advancement.getDescription().getString()), null);
         }
     }
 
@@ -204,7 +204,7 @@ public class ChatBridge extends ListenerAdapter {
             prefix = "";
         } else {
             sender = null;
-            prefix = source.getName() + ": ";
+            prefix = Utils.escapeUnderscores(source.getName()) + ": ";
         }
         String data = command.split(" ", 2)[1];
         String message;
