@@ -119,4 +119,11 @@ public class Utils {
         nodes.add(TextNode.of(text.substring(lastEnd)));
         return TextNode.wrap(nodes);
     }
+
+    public static String escapeUnderscores(String username) {
+        if (username == null) {
+            return null;
+        }
+        return username.replaceAll("_", "\\_");
+    }
 }

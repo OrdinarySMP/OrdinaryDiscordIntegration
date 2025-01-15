@@ -10,6 +10,7 @@ import java.util.concurrent.TimeUnit;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.minecraft.server.network.ServerPlayerEntity;
+import tronka.justsync.Utils;
 import tronka.justsync.config.Config;
 
 public class DiscordChatMessageSender {
@@ -102,7 +103,7 @@ public class DiscordChatMessageSender {
 
     private String getMessage() {
         if (this.sender != null) {
-            return this.sender.getName().getLiteralString() + ": " + this.cleanedMessage();
+            return Utils.escapeUnderscores(this.sender.getName().getLiteralString()) + ": " + this.cleanedMessage();
         }
         return this.cleanedMessage();
     }
