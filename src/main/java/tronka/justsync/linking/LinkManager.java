@@ -145,7 +145,7 @@ public class LinkManager extends ListenerAdapter {
         Optional<PlayerLink> existing = this.linkData.getPlayerLink(discordId);
         if (existing.isPresent()) {
             PlayerLink link = existing.get();
-            if (link.altCount() >= this.integration.getConfig().linking.maxAlts) {
+            if (this.reachedMaxAlts(link)) {
                 return this.integration.getConfig().linkResults.failedTooManyLinked;
             }
             link.addAlt(PlayerData.from(linkRequest.get()));
@@ -156,6 +156,24 @@ public class LinkManager extends ListenerAdapter {
             this.integration.getDiscordLogger().onLinkMain(linkRequest.get().getPlayerId());
         }
         return this.integration.getConfig().linkResults.linkSuccess.replace("%name%", linkRequest.get().getName());
+    }
+
+    private boolean reachedMaxAlts(PlayerLink link) {
+        Optional<Member> member = this.getDiscordOf(link);
+        if (member.isEmpty()) {
+            return true;
+        }
+        Map<String, Integer> maxAltsForRoles = this.integration.getConfig().linking.maxAltsForRoles;
+        for (Role role : member.get().getRoles()) {
+            if (maxAltsForRoles.containsKey(role.getId())) {
+                return link.altCount() >= maxAltsForRoles.get(role.getId());
+            }
+            if (maxAltsForRoles.containsKey(role.getName())) {
+                return link.altCount() >= maxAltsForRoles.get(role.getName());
+            }
+        }
+
+        return link.altCount() >= this.integration.getConfig().linking.maxAlts;
     }
 
     private Optional<LinkRequest> getPlayerLinkFromCode(String code) {
