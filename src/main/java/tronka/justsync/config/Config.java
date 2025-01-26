@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import tronka.justsync.JustSyncApplication;
 
 public class Config {
@@ -87,11 +88,13 @@ public class Config {
         public boolean renameOnJoin = true;
         @TomlComment("Block discord users with an ongoing timeout from joining")
         public boolean disallowTimeoutMembersToJoin = true;
-        @TomlComment({"How many alt accounts should a player be able to link to a single discord account",
-            "If maxAlts is set to 1 will be able to link their main account as well as a single alt account"})
-        public int maxAlts = 1;
         @TomlComment("How many minutes a code for linking should be valid")
         public long linkCodeExpireMinutes = 10;
+        @TomlComment({"How many alt accounts should a player be able to link to a single discord account",
+            "If maxAlts is set to 1 players will be able to link their main account as well as a single alt account"})
+        public int maxAlts = 1;
+        @TomlComment("Any role can have an override for the maximum amount of alts")
+        public Map<String, Integer> maxAltsForRoles = Map.of("1234567890", 2);
     }
 
     public static class ErrorStrings {
