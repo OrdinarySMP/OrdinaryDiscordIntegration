@@ -1,7 +1,9 @@
 package tronka.justsync;
 
 import com.mojang.authlib.GameProfile;
+
 import java.util.Objects;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -50,14 +52,23 @@ public class DiscordCommandHandler extends ListenerAdapter {
                 event.reply(message).setEphemeral(true).queue();
             }
             case "list" -> {
-                Stream<String> names = this.integration.getServer().getPlayerManager().getPlayerList().stream()
+                List<String> namesList = this.integration.getServer().getPlayerManager().getPlayerList().stream()
                     .filter(player -> !this.integration.getVanishIntegration().isVanished(player))
-                    .map(player -> player.getName().getLiteralString());
-                String message = String.join(", ", names.toList());
-                if (message.isEmpty()) {
+                    .map(player -> player.getName().getLiteralString())
+                    .toList();
+
+                String nameList = String.join(", ", namesList);
+                String message;
+
+                if (namesList.size() > 1) {
+                    message = "There are currently " + namesList.size() + " players online:";
+                } else if (namesList.size() == 1) {
+                    message = "There is currently " + namesList.size() + " player online:";
+                } else {
                     message = "There are currently no players online";
                 }
-                event.reply(message).setEphemeral(true).queue();
+
+                event.reply(message + "\n" + nameList).setEphemeral(true).queue();
             }
             case "linking" -> linkingCommand(event);
             case "reload" -> {
