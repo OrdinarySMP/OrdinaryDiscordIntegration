@@ -20,9 +20,9 @@ public class VanishIntegration {
         }
         VanishEvents.VANISH_EVENT.register((player, isVanished) -> {
             if (isVanished) {
-                integration.getChatBridge().onPlayerLeave(player);
+                integration.getChatBridge().onPlayerLeave(player, true);
             } else {
-                integration.getChatBridge().onPlayerJoin(player);
+                integration.getChatBridge().onPlayerJoin(player, true);
             }
         });
     }
