@@ -59,7 +59,7 @@ public class ChatBridge extends ListenerAdapter {
                 }
             })).queue();
         }
-        this.updateRichPresence(0, true);
+        this.updateRichPresence(0);
     }
 
     private void setWebhook(Webhook webhook) {
@@ -110,32 +110,43 @@ public class ChatBridge extends ListenerAdapter {
     }
 
     public void onPlayerJoin(ServerPlayerEntity player) {
+        onPlayerJoin(player, false);
+    }
+
+    public void onPlayerJoin(ServerPlayerEntity player, boolean vanish) {
         sendMessageToDiscord(this.integration.getConfig().messages.playerJoinMessage.replace("%user%",
             Utils.escapeUnderscores(player.getName().getString())), null);
-        updateRichPresence(1, false);
+        updateRichPresence(vanish ? 0 : 1);
     }
 
     public void onPlayerLeave(ServerPlayerEntity player) {
+        onPlayerLeave(player, false);
+    }
+
+    public void onPlayerLeave(ServerPlayerEntity player, boolean vanish) {
         if (this.stopped) {
             return;
         }
 
         sendMessageToDiscord(this.integration.getConfig().messages.playerLeaveMessage.replace("%user%",
             Utils.escapeUnderscores(player.getName().getString())), null);
-        updateRichPresence(-1, false);
+        updateRichPresence(vanish ? 0 : -1);
     }
 
-    private void updateRichPresence(int modifier, boolean initial) {
+    private void updateRichPresence(int modifier) {
         if (!this.integration.getConfig().showPlayerCountStatus) {
             return;
         }
         long playerCount;
-        if (initial) {
+        if (this.integration.getServer() == null) {
             playerCount = 0;
         } else {
-            playerCount = this.integration.getServer().getPlayerManager().getPlayerList().stream()
-                .filter(p -> !this.integration.getVanishIntegration().isVanished(p)).count() + modifier;
+            playerCount = this.integration.getServer().getPlayerManager()
+                    .getPlayerList().stream()
+                    .filter(p -> !this.integration.getVanishIntegration().isVanished(p))
+                    .count() + modifier;
         }
+
         this.integration.getJda().getPresence().setPresence(Activity.playing(switch ((int) playerCount) {
             case 0 -> this.integration.getConfig().messages.onlineCountZero;
             case 1 -> this.integration.getConfig().messages.onlineCountSingular;
