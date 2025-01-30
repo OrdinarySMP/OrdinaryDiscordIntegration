@@ -40,9 +40,9 @@ public class Utils {
         "https?://[-a-zA-Z0-9@:%._+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b[-a-zA-Z0-9()@:%_+.~#?&/=]*");
 
     private static final Pattern SHARED_LOCATION_PATTERN =
-            Pattern.compile("^\\[x:(-?\\d+), y:(-?\\d+), z:(-?\\d+)]$");
+            Pattern.compile("^(?:\\s?)+\\[x:(-?\\d+), y:(-?\\d+), z:(-?\\d+)]$");
     private static final Pattern SHARED_WAYPOINT_PATTERN =
-            Pattern.compile("^\\[name:(\\w+), x:(-?\\d+), y:(-?\\d+), z:(-?\\d+), dim:minecraft:(?:\\w+_)?(\\w+)(?:, icon:\\w+)?\\]$");
+            Pattern.compile("^(?:\\s?)+\\[name:(.*?), x:(-?\\d+), y:(-?\\d+), z:(-?\\d+), dim:minecraft:(?:\\w+_)?(\\w+)(?:, icon:\\w+)?\\]$");
     private static final Map<RegistryKey<World>, String> DIMENSION_MAP =
             Map.of(
                 World.OVERWORLD, "Overworld",
@@ -153,7 +153,7 @@ public class Utils {
 
     public static String formatVoxel(
             String message, Config config, ServerPlayerEntity player) {
-        if (!message.startsWith("[x:") && !message.startsWith("[name:")) {
+        if (!message.contains("[x:") && !message.contains("[name:")) {
             return message;
         }
 
@@ -187,10 +187,11 @@ public class Utils {
         String x = matcher.group(2);
         String y = matcher.group(3);
         String z = matcher.group(4);
-        String dim = StringUtils.capitalize(matcher.group(5));
+        String dim = matcher.group(5).substring(0, 1).toUpperCase()
+                + matcher.group(5).substring(1);
 
         return replacePlaceholdersWaypoint(name,
-            name.substring(1, 2).toUpperCase(), dim, x, y, z, config);
+            name.substring(0, 1).toUpperCase(), dim, x, y, z, config);
     }
 
     public static String formatXaero(String message, Config config) {
@@ -202,6 +203,7 @@ public class Utils {
         if (messageParts.size() != 10) {
             return message;
         }
+
 
         int x, y, z;
         try {
