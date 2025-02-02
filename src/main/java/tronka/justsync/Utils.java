@@ -27,7 +27,6 @@ import net.minecraft.registry.RegistryKey;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.world.World;
 
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import tronka.justsync.chat.TextReplacer;
 import tronka.justsync.config.Config;
@@ -148,7 +147,7 @@ public class Utils {
         if (username == null) {
             return null;
         }
-        return username.replaceAll("_", "\\_");
+        return username.replace("_", "\\_");
     }
 
     public static String formatVoxel(
