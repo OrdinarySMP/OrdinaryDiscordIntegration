@@ -119,6 +119,12 @@ public class ChatBridge extends ListenerAdapter {
         updateRichPresence(vanish ? 0 : 1);
     }
 
+    public void onPlayerTimeOut(ServerPlayerEntity player) {
+        sendMessageToDiscord(this.integration.getConfig().messages.playerTimeOutMessage.replace("%user%",
+                Utils.escapeUnderscores(player.getName().getString())), null);
+        updateRichPresence(-1);
+    }
+
     public void onPlayerLeave(ServerPlayerEntity player) {
         onPlayerLeave(player, false);
     }
