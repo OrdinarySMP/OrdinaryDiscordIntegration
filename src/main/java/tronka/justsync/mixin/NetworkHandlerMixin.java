@@ -18,8 +18,13 @@ public class NetworkHandlerMixin {
 
     @Inject(method = "onDisconnected", at = @At("HEAD"))
     private void onPlayerLeave(DisconnectionInfo info, CallbackInfo ci) {
-        if (!JustSyncApplication.getInstance().getVanishIntegration().isVanished(this.player)) {
+        if (JustSyncApplication.getInstance().getVanishIntegration().isVanished(this.player)) {
+            return;
+        }
+        if (!info.reason().toString().contains("disconnect.timeout")) {
             JustSyncApplication.getInstance().getChatBridge().onPlayerLeave(this.player);
+        } else {
+            JustSyncApplication.getInstance().getChatBridge().onPlayerTimeOut(this.player);
         }
     }
 }

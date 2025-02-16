@@ -147,8 +147,11 @@ public class Config {
             "Placeholder: %user%: The player name of whoever joined"})
         public String playerJoinMessage = "%user% joined";
         @TomlComment({"The message to display in discord when a player leaves",
-            "Placeholder: %user%: The player name of whoever joined"})
+            "Placeholder: %user%: The player name of whoever left"})
         public String playerLeaveMessage = "%user% left";
+        @TomlComment({"The message to display in discord when a player times out",
+            "Placeholder: %user%: The player name of whoever timed out"})
+        public String playerTimeOutMessage = "%user% timed out";
         @TomlComment({"The formatting to use for commands sent to the console channel",
             "Placeholders:",
             "%user%: The user who received the advancement",
